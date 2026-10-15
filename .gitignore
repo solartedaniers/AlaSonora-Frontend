@@ -1,0 +1,26 @@
+# Dependencias, builds y cachés
+node_modules/
+dist/
+out-tsc/
+coverage/
+tmp/
+.angular/cache/
+
+# Secretos: solo el .env.example va al repositorio
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+*.log
+
+# IDEs y sistema operativo (la config compartida de VS Code sí se versiona)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+.DS_Store
+Thumbs.db
