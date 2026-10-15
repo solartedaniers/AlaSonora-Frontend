@@ -160,6 +160,7 @@
       "title": "Welcome back to the field",
       "subtitle": "Sign in to sync your recordings and access your bioacoustic notebook.",
       "email": "Email or Observer ID",
+      "emailPlaceholder": "observer@biota.org",
       "password": "Password",
       "forgotPassword": "Forgot your password?",
       "remember": "Keep session active on this device",

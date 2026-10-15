@@ -1,3 +1,5 @@
+import { demoAccount } from './demo-account';
+
 export const environment = {
   production: false,
   supabaseUrl: 'https://pfwvhdtygwvrbdvmbywk.supabase.co',
@@ -41,9 +43,5 @@ export const environment = {
   },
   // Duración de los avisos breves (p. ej. "Confirma en tu correo" al registrarse).
   toastMs: 3000,
-  // Cuenta de ejemplo que pidió el profesor: solo se muestra como placeholder en el login.
-  demoAccount: {
-    email: 'omairalimas05@gmail.com',
-    password: 'Omaira25*',
-  },
+  demoAccount,
 };

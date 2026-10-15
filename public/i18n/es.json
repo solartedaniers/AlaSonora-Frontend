@@ -160,6 +160,7 @@
       "title": "Bienvenido de vuelta al campo",
       "subtitle": "Ingresa para sincronizar tus grabaciones y acceder a tu cuaderno bioacústico.",
       "email": "Correo electrónico o ID de Observador",
+      "emailPlaceholder": "observador@biota.org",
       "password": "Contraseña",
       "forgotPassword": "¿Olvidaste tu contraseña?",
       "remember": "Mantener sesión activa en este dispositivo",
