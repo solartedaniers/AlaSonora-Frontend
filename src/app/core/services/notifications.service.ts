@@ -26,7 +26,7 @@ interface NotificationFeed {
   items: AppNotification[];
 }
 
-// Canal privado y evento que emite el trigger de la base (database/2026-10-16_notifications.sql).
+// Canal privado y evento que emite el trigger de notificaciones de la base en Supabase al crear una detección.
 const CHANNEL_TOPIC = 'public-detections';
 const CREATED_EVENT = 'detection-created';
 
