@@ -51,3 +51,42 @@ Usan Karma + Jasmine (ya incluidos) y el Chrome instalado en la máquina (`CHROM
 encuentra). Cubren validadores, pipes, guards, el interceptor de autenticación, el servicio de
 i18n, la barra de progreso de la clasificación y los placeholders del login. El workflow
 `.github/workflows/ci.yml` corre el build y las pruebas en cada push a `main`.
+
+## Arquitectura de rendering y workers
+
+| Patrón | Dónde |
+|---|---|
+| SSG (prerender en el build) | `/`, `/login`, `/register`, `/forgot-password` |
+| SSR + caché ISR (stale-while-revalidate) | `/map`, con la caché en `src/server.ts` |
+| CSR | rutas privadas (`/dashboard`, `/record`, `/history`, …) y `/reset-password` |
+| Hidratación incremental y replay de eventos | `provideClientHydration(withEventReplay(), withIncrementalHydration())` en `app.config.ts` |
+
+- **Web Worker** (`workers/audio-processing.worker.ts`): calcula la FFT del audio en vivo fuera del
+  hilo principal; el espectrograma se pinta en `requestAnimationFrame` (tarea) con los datos que
+  llegan por mensajes del worker.
+- **Shared Worker** (`workers/sync.worker.ts`): sincroniza el mapa de detecciones en vivo entre
+  pestañas del mismo origen.
+- **Service Worker** (`@angular/service-worker`, `ngsw-config.json` y `public/sw.js`): caché de la
+  app, funcionamiento offline y sincronización diferida de las grabaciones pendientes.
+- La elección de patrón por ruta está explicada en `src/app/app.routes.server.ts`.
+
+## Despliegue en Render (Web Service de Node)
+
+El servicio vive en la raíz de este repositorio, así que el Root Directory queda vacío.
+
+| Ajuste | Valor |
+|---|---|
+| Root Directory | *(vacío)* |
+| Build Command | `npm ci && npm run build` |
+| Start Command | `npm run serve:ssr:frontend` |
+| Variables | `DEMO_ACCOUNT_EMAIL`, `DEMO_ACCOUNT_PASSWORD` (opcionales) |
+
+## Proyecto AlaSonora
+
+| Parte | Repositorio |
+|---|---|
+| Frontend (este repositorio) | https://github.com/solartedaniers/AlaSonora-Frontend |
+| Backend (Spring Boot, API REST) | https://github.com/solartedaniers/AlaSonora-Backend |
+| Motor de IA (FastAPI + BirdNET) | https://github.com/solartedaniers/AlaSonora-IA |
+
+App desplegada: https://alasonora-frontend.onrender.com
