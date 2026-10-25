@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type { User } from '@supabase/supabase-js';
 import { AppUser, ObserverRole, UserStats } from '../models';
 import { SUPABASE_SESSION_STORAGE_KEY, SupabaseClientService } from './supabase-client.service';
+import { AuthRedirectUrlService } from './auth-redirect-url.service';
 import { environment } from '../../../environments/environment';
 
 const DEFAULT_ROLE: ObserverRole = 'hobbyist';
@@ -17,6 +18,7 @@ const DEFAULT_ROLE: ObserverRole = 'hobbyist';
 export class UserService {
   private readonly supabase = inject(SupabaseClientService).client;
   private readonly http = inject(HttpClient);
+  private readonly authRedirectUrls = inject(AuthRedirectUrlService);
 
   readonly currentUser = signal<AppUser | null>(null);
 
@@ -84,7 +86,7 @@ export class UserService {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, role } },
+      options: { data: { username, role }, emailRedirectTo: this.authRedirectUrls.emailConfirmation() },
     });
     if (error) throw error;
     return data.session !== null;
@@ -97,7 +99,7 @@ export class UserService {
 
   async sendPasswordResetEmail(email: string): Promise<void> {
     const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: this.authRedirectUrls.passwordReset(),
     });
     if (error) throw error;
   }

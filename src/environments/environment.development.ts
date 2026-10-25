@@ -1,4 +1,5 @@
 import { demoAccount } from './demo-account';
+import { siteUrl } from './site-url';
 
 export const environment = {
   production: false,
@@ -44,4 +45,11 @@ export const environment = {
   // Duración de los avisos breves (p. ej. "Confirma en tu correo" al registrarse).
   toastMs: 3000,
   demoAccount,
+  // Lo uso para el link canonical y og:url (ver site-url.ts).
+  siteUrl,
+  // Con estas rutas los correos de Supabase Auth vuelven al origen actual del navegador.
+  authRedirectPaths: {
+    emailConfirmation: '/',
+    passwordReset: '/reset-password',
+  },
 };

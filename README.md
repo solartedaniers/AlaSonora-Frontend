@@ -37,8 +37,15 @@ Solo las lee `npm run build` (de las variables del sistema o de un `.env`, ver `
 |---|---|
 | `DEMO_ACCOUNT_EMAIL` | Correo de la cuenta de ejemplo que el login muestra como placeholder |
 | `DEMO_ACCOUNT_PASSWORD` | Contraseña de esa cuenta de ejemplo |
+| `SITE_URL` | Origen público del sitio (`https://alasonora.com`): link canonical, `og:url`, `robots.txt` y `sitemap.xml` |
 
-Si no existen, el login muestra los placeholders genéricos y el build no falla.
+Si no existen, el login muestra los placeholders genéricos y el build no falla; sin `SITE_URL`, el build sale sin
+canonical ni `og:url`, `robots.txt` sin la línea `Sitemap:` y sin `sitemap.xml`. `robots.txt` y `sitemap.xml` se
+generan al final del build (`scripts/seo-files.mjs`) a partir de `seo/robots.txt` y `seo/sitemap-routes.json`.
+
+Los enlaces de los correos de Supabase Auth (confirmar la cuenta y restablecer la contraseña) vuelven al origen
+actual del navegador (`AuthRedirectUrlService`), así que funcionan igual desde el dominio propio, desde onrender
+y en local, siempre que ese origen esté en las Redirect URLs de Supabase.
 
 ## Pruebas
 
@@ -79,7 +86,7 @@ El servicio vive en la raíz de este repositorio, así que el Root Directory que
 | Root Directory | *(vacío)* |
 | Build Command | `npm ci && npm run build` |
 | Start Command | `npm run serve:ssr:frontend` |
-| Variables | `DEMO_ACCOUNT_EMAIL`, `DEMO_ACCOUNT_PASSWORD` (opcionales) |
+| Variables | `SITE_URL` (`https://alasonora.com`); `DEMO_ACCOUNT_EMAIL`, `DEMO_ACCOUNT_PASSWORD` (opcionales) |
 
 ## Proyecto AlaSonora
 
@@ -89,4 +96,4 @@ El servicio vive en la raíz de este repositorio, así que el Root Directory que
 | Backend (Spring Boot, API REST) | https://github.com/solartedaniers/AlaSonora-Backend |
 | Motor de IA (FastAPI + BirdNET) | https://github.com/solartedaniers/AlaSonora-IA |
 
-App desplegada: https://alasonora-frontend.onrender.com
+App desplegada: https://alasonora.com (también responde en https://alasonora-frontend.onrender.com)

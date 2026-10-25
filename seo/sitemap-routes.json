@@ -1,0 +1,7 @@
+[
+  { "path": "/", "changefreq": "monthly", "priority": "1.0" },
+  { "path": "/map", "changefreq": "hourly", "priority": "0.9" },
+  { "path": "/register", "changefreq": "yearly", "priority": "0.5" },
+  { "path": "/login", "changefreq": "yearly", "priority": "0.4" },
+  { "path": "/forgot-password", "changefreq": "yearly", "priority": "0.2" }
+]
