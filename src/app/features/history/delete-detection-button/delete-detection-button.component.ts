@@ -43,20 +43,31 @@ import { ToastService } from '../../../core/services/toast.service';
     }
   `,
   styles: `
+    /* Mide lo mismo que el badge de certeza para alinearse con él; el ícono va al tamaño de su texto. */
     .delete-detection {
+      --delete-size: calc(var(--text-sm) * var(--leading-normal) + var(--space-unit) * 2);
+      position: relative;
       display: grid;
       place-items: center;
-      width: var(--touch-target);
-      height: var(--touch-target);
+      width: var(--delete-size);
+      height: var(--delete-size);
       border-radius: var(--radius-full);
-      background: var(--color-surface-container-lowest);
+      background: transparent;
       color: var(--color-error);
-      box-shadow: var(--shadow-md);
       transition: background-color var(--duration-fast) var(--ease-out);
     }
-    .delete-detection:enabled:hover {
+    .delete-detection .material-symbols-outlined {
+      font-size: var(--text-base);
+    }
+    /* El ícono se ve pequeño, pero el área táctil sigue siendo la cómoda de los tokens. */
+    .delete-detection::before {
+      content: '';
+      position: absolute;
+      inset: calc((var(--delete-size) - var(--touch-target)) / 2);
+    }
+    .delete-detection:enabled:hover,
+    .delete-detection:focus-visible {
       background: var(--color-error-container);
-      color: var(--color-on-error-container);
     }
     .delete-detection:disabled {
       opacity: 0.5;
