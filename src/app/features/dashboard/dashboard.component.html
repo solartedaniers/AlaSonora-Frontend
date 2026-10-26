@@ -81,7 +81,9 @@
           <!-- El canto real de esa detección: se calcula solo cuando la tarjeta entra en pantalla. -->
           <span class="dashboard-latest__plate">
             @defer (on viewport) {
-              <app-recording-spectrogram [audioUrl]="d.audioUrl" [maxKhz]="latestMaxKhz" />
+              @if (audioUrlsFresh()) {
+                <app-recording-spectrogram [audioUrl]="d.audioUrl" [maxKhz]="latestMaxKhz" />
+              }
               <!-- Al entrar en pantalla (y al pasar el cursor) una línea de lectura recorre el canto. -->
               <span class="dashboard-latest__sweep" aria-hidden="true"></span>
             } @placeholder {

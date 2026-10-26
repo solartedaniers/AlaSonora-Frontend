@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { ObserverRole, Profile } from '../models';
 import { SupabaseClientService } from './supabase-client.service';
 import { UserService } from './user.service';
+import { DETECTION_CACHE_KEYS, NavigationCacheService } from './navigation-cache.service';
 import { storageObjectName } from './storage-object-name';
 
 const AVATAR_BUCKET = 'avatars';
@@ -38,6 +39,7 @@ export class ProfileService {
   private readonly http = inject(HttpClient);
   private readonly supabase = inject(SupabaseClientService).client;
   private readonly user = inject(UserService);
+  private readonly navigationCache = inject(NavigationCacheService);
   /** Perfil de la sesión actual; la clave es el id del usuario para no servir nunca el de otro. */
   private cached: { userId: string; profile: Promise<Profile> } | null = null;
 
@@ -76,6 +78,8 @@ export class ProfileService {
     );
     const profile = this.fromBackend(dto);
     this.cached = { userId: profile.id, profile: Promise.resolve(profile) };
+    // Las detecciones muestran mi nombre de usuario: las vuelvo a pedir con el nuevo.
+    this.navigationCache.invalidate(DETECTION_CACHE_KEYS);
     return profile;
   }
 

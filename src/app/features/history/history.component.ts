@@ -11,6 +11,7 @@ import { SpeciesNamePipe } from '../../shared/pipes/species-name.pipe';
 import { DetectionsService } from '../../core/services/detections.service';
 import { Detection, SyncStatus } from '../../core/models';
 import { LoggerService } from '../../core/services/logger.service';
+import { NAVIGATION_CACHE_KEYS, NavigationCacheService } from '../../core/services/navigation-cache.service';
 import { SpeciesImageComponent } from '../../shared/components/species-image/species-image.component';
 import { OfflineStorageService } from '../../core/services/offline-storage.service';
 import { OfflineRecordingsComponent } from './offline-recordings/offline-recordings.component';
@@ -39,6 +40,7 @@ export class HistoryComponent implements OnInit {
   private readonly detectionsService = inject(DetectionsService);
   private readonly logger = inject(LoggerService);
   private readonly offlineQueue = inject(OfflineStorageService);
+  private readonly cache = inject(NavigationCacheService);
 
   readonly all = signal<Detection[]>([]);
   readonly view = signal<HistoryView>('gallery');
@@ -84,8 +86,11 @@ export class HistoryComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      this.all.set(await this.detectionsService.getMine());
-      this.loadState.set('ready');
+      // Al volver muestro el último historial al instante y lo actualizo en segundo plano.
+      await this.cache.staleWhileRevalidate(NAVIGATION_CACHE_KEYS.myDetections, () => this.detectionsService.getMine(), (detections) => {
+        this.all.set(detections);
+        this.loadState.set('ready');
+      });
     } catch (error) {
       this.logger.error('History', 'load failed', error);
       this.loadState.set('error');

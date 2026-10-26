@@ -29,6 +29,7 @@ import { DetectionsService } from '../../core/services/detections.service';
 import { LiveSyncService } from '../../core/services/live-sync.service';
 import { Detection } from '../../core/models';
 import { LoggerService } from '../../core/services/logger.service';
+import { NAVIGATION_CACHE_KEYS, NavigationCacheService } from '../../core/services/navigation-cache.service';
 
 // Vista inicial antes de tener detecciones reales que encuadrar: Colombia
 // continental (mismo fallback de campo usado en el flujo de grabación).
@@ -66,6 +67,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly detectionsService = inject(DetectionsService);
   private readonly logger = inject(LoggerService);
   private readonly userService = inject(UserService);
+  private readonly cache = inject(NavigationCacheService);
   readonly liveSync = inject(LiveSyncService);
 
   @ViewChild('mapContainer', { static: true }) private readonly mapContainerRef!: ElementRef<HTMLDivElement>;
@@ -115,8 +117,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     try {
       await this.loadFeed();
-      this.selected.set(this.feed()[0] ?? null);
-      this.loadState.set('ready');
     } catch (error) {
       this.logger.error('Map', 'public feed load failed', error);
       // Si el servidor ya entregó avistamientos (SSR), un fallo al refrescar no debe ocultarlos.
@@ -131,14 +131,26 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private async loadFeed(fresh = false): Promise<void> {
     if (this.isBrowser && (await this.userService.isAuthenticated())) {
       try {
-        this.feed.set(await this.detectionsService.getFeed());
+        await this.cache.staleWhileRevalidate(NAVIGATION_CACHE_KEYS.personalFeed, () => this.detectionsService.getFeed(), (feed) =>
+          this.showFeed(feed),
+        );
         return;
       } catch (error) {
         // Sesión vencida o rechazada: el mapa público sigue funcionando sin ella.
         this.logger.warn('Map', 'personal feed failed, showing the public one', error);
       }
     }
-    this.feed.set(await this.detectionsService.getAll(fresh));
+    await this.cache.staleWhileRevalidate(NAVIGATION_CACHE_KEYS.publicFeed, () => this.detectionsService.getAll(fresh), (feed) =>
+      this.showFeed(feed),
+    );
+  }
+
+  // Con datos guardados y luego frescos conservo el avistamiento elegido si sigue en el feed.
+  private showFeed(feed: Detection[]): void {
+    const selectedId = this.selected()?.id;
+    this.feed.set(feed);
+    this.selected.set(feed.find((detection) => detection.id === selectedId) ?? feed[0] ?? null);
+    this.loadState.set('ready');
   }
 
   async ngAfterViewInit(): Promise<void> {

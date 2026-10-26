@@ -44,6 +44,11 @@ export const environment = {
     estimateTauMs: 15000,
     tickMs: 200,
   },
+  // Caché en memoria al cambiar de pantalla: muestro lo último que vi y lo actualizo en segundo plano.
+  // Pasado maxAgeMs lo descarto y vuelvo a mostrar la carga.
+  navigationCache: {
+    maxAgeMs: 300000,
+  },
   // Registro liviano de las grabaciones offline ya enviadas (sin audio): cuántas guardo y por cuántos días.
   offlineRecordingsLog: {
     maxEntries: 20,

@@ -13,6 +13,7 @@ import { UserService } from '../../core/services/user.service';
 import { DetectionsService } from '../../core/services/detections.service';
 import { I18nService } from '../../core/services/i18n.service';
 import { Detection, UserStats, speciesDisplayName } from '../../core/models';
+import { NAVIGATION_CACHE_KEYS, NavigationCacheService } from '../../core/services/navigation-cache.service';
 import { AiEngineStatusService } from '../../core/services/ai-engine-status.service';
 import { AUDIO_UPLOAD_MAX_MB } from '../../core/validators/audio-upload.validator';
 
@@ -51,6 +52,7 @@ export class DashboardComponent implements OnInit {
   private readonly detectionsService = inject(DetectionsService);
   private readonly i18n = inject(I18nService);
   private readonly aiEngine = inject(AiEngineStatusService);
+  private readonly cache = inject(NavigationCacheService);
 
   /** La miniatura del canto usa la misma banda que Grabar y Resultado. */
   readonly latestMaxKhz = LATEST_PLATE_MAX_KHZ;
@@ -63,6 +65,8 @@ export class DashboardComponent implements OnInit {
   readonly mine = signal<Detection[] | null>(null);
   readonly recent = computed(() => (this.mine() ?? []).slice(0, RECENT_DETECTIONS));
   readonly latest = computed(() => this.mine()?.[0] ?? null);
+  /** Las URLs de audio vencen en minutos: dibujo el canto solo con las que acaban de llegar del backend. */
+  readonly audioUrlsFresh = signal(false);
 
   readonly readings = computed<PersonalReading[]>(() => {
     const s = this.stats();
@@ -90,8 +94,19 @@ export class DashboardComponent implements OnInit {
     this.aiEngine.warmUp();
     // Sin catch, un fallo de las métricas impediría cargar también las
     // detecciones recientes; si fallan, la sección simplemente no se muestra.
-    this.user.getStats().then((stats) => this.stats.set(stats)).catch(() => undefined);
+    this.cache
+      .staleWhileRevalidate(NAVIGATION_CACHE_KEYS.myStats, () => this.user.getStats(), (stats) => this.stats.set(stats))
+      .catch(() => undefined);
     // Una sola petición alimenta el carrusel, la última detección y la franja de actividad.
-    this.mine.set(await this.detectionsService.getMineNewestFirst());
+    let fresh = false;
+    const loadMine = async () => {
+      const detections = await this.detectionsService.getMine();
+      fresh = true;
+      return detections;
+    };
+    await this.cache.staleWhileRevalidate(NAVIGATION_CACHE_KEYS.myDetections, loadMine, (detections) => {
+      this.mine.set(DetectionsService.newestFirst(detections));
+      this.audioUrlsFresh.set(fresh);
+    });
   }
 }
