@@ -18,10 +18,8 @@ type StatusCheck = 'ready' | 'notReady' | 'failed' | 'signedOut';
 const UNAUTHORIZED = 401;
 
 /**
- * Estado del motor de IA, que en Render se duerme por inactividad. Pregunto al backend
- * (GET /api/ai/status); el backend lo despierta en segundo plano, pero Render le responde 429, así que
- * mientras sigue encendiendo también lo despierta el navegador. Solo consulto mientras no está listo:
- * al encender, al cerrar sesión, con un 401 o al agotarse el plazo dejo de preguntar y de despertarlo.
+ * Pregunto el estado del motor a GET /api/ai/status y, mientras enciende, también lo despierta el navegador.
+ * Dejo de preguntar al quedar listo, al cerrar sesión, con un 401 o al agotarse el plazo.
  */
 @Injectable({ providedIn: 'root' })
 export class AiEngineStatusService {

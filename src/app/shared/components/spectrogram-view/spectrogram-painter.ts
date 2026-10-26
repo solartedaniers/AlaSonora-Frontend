@@ -15,12 +15,7 @@ export class SpectrogramPainter {
     this.ramp = new HeatRamp(canvas);
   }
 
-  /**
-   * @param columns espectros de magnitud, graves primero (se dibujan abajo)
-   * @param intensity convierte una magnitud a 0..1
-   * @param slotCount total de columnas a lo ancho del canvas
-   * @param firstSlot columna donde se dibuja `columns[0]`
-   */
+  /** columns va de graves a agudos, intensity pasa la magnitud a 0..1 y firstSlot es la columna de columns[0] entre slotCount. */
   draw(columns: Float32Array[], intensity: (magnitude: number) => number, slotCount = columns.length, firstSlot = 0): void {
     const ctx = this.ctx;
     if (!ctx) return;

@@ -1,8 +1,6 @@
 /**
- * Historial de espectros de la grabación en curso, compartido por la vista plana y la cascada 3D.
- * Se llena al llegar cada mensaje del worker (una task, sin pintar nada) y cada vista lo LEE en su
- * propio requestAnimationFrame. Así, al cambiar de vista, la nueva pinta lo ya capturado sin pedir
- * nada otra vez al worker.
+ * Historial de espectros de la grabación, compartido por la vista plana y la 3D: lo lleno con cada mensaje del worker
+ * y cada vista lo lee en su propio requestAnimationFrame.
  */
 export class FrameHistory {
   private frames: Float32Array[] = [];

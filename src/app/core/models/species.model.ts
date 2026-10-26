@@ -1,8 +1,4 @@
-/**
- * Especie identificada por el modelo BirdNET (o candidata en el ranking de
- * alternativas). Mantenemos nombre común, nombre científico y metadatos
- * taxonómicos separados de la lógica de presentación.
- */
+/** Especie identificada por BirdNET (o candidata alternativa), con sus nombres y taxonomía. */
 export interface Species {
   id: string;
   commonName: string;
@@ -29,12 +25,8 @@ export function speciesDisplayName(species: Species, lang: 'es' | 'en'): string 
 export type IucnStatus = 'LC' | 'NT' | 'VU' | 'EN' | 'CR' | 'DD' | 'NE' | 'EW' | 'EX';
 
 /**
- * Traducción de los valores del campo `type` de Xeno-canto (species.typicalVocalizations),
- * texto semi-libre de un recolector de datos externo, no un enum cerrado.
- * Claves en minúscula, ya recortadas. Cubre los valores observados con
- * frecuencia real en pruebas contra la API (canto/reclamo y variantes
- * documentadas), no un vocabulario inventado. Cualquier valor fuera de este
- * diccionario se muestra tal cual vino de Xeno-canto (ver VocalizationTagPipe).
+ * Traduzco los valores del campo type de Xeno-canto que aparecen con frecuencia (claves en minúscula);
+ * lo que no está aquí lo muestro tal cual (VocalizationTagPipe).
  */
 export const XENO_CANTO_VOCALIZATION_LABELS: Record<string, string> = {
   song: 'vocalizationTag.song',

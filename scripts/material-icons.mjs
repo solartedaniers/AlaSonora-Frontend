@@ -1,8 +1,5 @@
-// Íconos de Material Symbols de la app: una lista central (src/app/theme/material-icons.json) y este script.
-//   node scripts/material-icons.mjs          → revisa que todo ícono usado esté en la lista (corre antes del build)
-//   node scripts/material-icons.mjs --subset → además descarga el subconjunto de Google Fonts con esa lista y lo
-//                                              incrusta en src/app/theme/_material-symbols-font.scss
-// Al usar un ícono nuevo: agrégalo a la lista y corre --subset.
+// Reviso que todo ícono usado esté en src/app/theme/material-icons.json (corre antes del build).
+// Con --subset además incrusto el subconjunto de la fuente; con un ícono nuevo lo agrego a la lista y corro --subset.
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -30,10 +30,8 @@ const POINTS_PER_ROW = 72;
 const GLOW_ALPHA = 0.5;
 
 /**
- * Pinta un espectrograma 3D en "cascada" sobre un canvas 2D: cada fila es un espectro
- * dibujado como una cresta en perspectiva (frecuencia → x, tiempo → profundidad,
- * energía → altura y color). Pinto del fondo al frente para que las crestas cercanas
- * tapen las lejanas. Solo sabe dibujar; el ritmo lo lleva su componente.
+ * Pinto cada espectro como una cresta en perspectiva (frecuencia → x, tiempo → profundidad, energía → altura y color),
+ * del fondo al frente; el ritmo lo lleva el componente.
  */
 export class WaterfallPainter {
   private readonly ctx: CanvasRenderingContext2D | null;
@@ -66,12 +64,7 @@ export class WaterfallPainter {
     this.ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  /**
-   * @param rows espectros, el más antiguo primero (frente) → el más nuevo al final (fondo, en el horizonte)
-   * @param rowCount total de filas entre el frente y el fondo
-   * @param advance avance 0…1 hacia la siguiente fila, para que las crestas se deslicen suave
-   * @param intensity convierte una magnitud a 0…1
-   */
+  /** rows va del más antiguo (frente) al más nuevo (fondo); advance (0…1) desliza las crestas hacia la siguiente fila. */
   draw(rows: Float32Array[], rowCount: number, advance: number, intensity: (magnitude: number) => number, axis: WaterfallAxis): void {
     const ctx = this.ctx;
     if (!ctx) return;

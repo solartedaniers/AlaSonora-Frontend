@@ -3,9 +3,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
 /**
- * Visito el /health público del motor desde el navegador: Render no deja que el backend, que también
- * corre en Render, despierte al servicio dormido (le responde 429). La respuesta no me sirve (no-cors
- * la deja opaca); solo busco que Render lo arranque, así que ignoro cualquier error. Nunca en SSR.
+ * Visito el /health público del motor desde el navegador porque Render no deja que el backend lo despierte (429).
+ * La respuesta opaca no me sirve, así que ignoro cualquier error; nunca corre en SSR.
  */
 @Injectable({ providedIn: 'root' })
 export class AiEngineBrowserWakeUpService {

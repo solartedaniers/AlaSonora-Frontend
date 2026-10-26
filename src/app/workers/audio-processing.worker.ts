@@ -3,15 +3,8 @@
 import { AudioWorkerInboundMessage, AudioWorkerOutboundMessage } from './messages';
 import { SpectrumAnalyzer } from './spectrum-analyzer';
 
-/**
- * Web Worker dedicado (no comparte hilo con la UI, sin acceso al DOM).
- * Recibe fragmentos de audio PCM capturados en `AudioCaptureService` y
- * calcula su espectro (FFT radix-2 en SpectrumAnalyzer) para no bloquear jamás el hilo principal del navegador
- * mientras se graba o sube un audio largo.
- */
-// Muestras PCM acumuladas de la grabación en curso, en el orden en que
-// llegaron los chunks, para poder empaquetarlas como WAV al finalizar sin
-// que el hilo principal tenga que tocar el audio crudo.
+/** Worker dedicado: recibo el PCM de AudioCaptureService y calculo su espectro con SpectrumAnalyzer sin bloquear la UI. */
+// Acumulo las muestras en orden para empaquetar el WAV al final sin que el hilo principal toque el audio crudo.
 let recordedChunks: Float32Array[] = [];
 let recordedSampleRate = 0;
 const spectrumAnalyzer = new SpectrumAnalyzer();

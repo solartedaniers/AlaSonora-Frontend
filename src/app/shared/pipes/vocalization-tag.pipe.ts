@@ -2,13 +2,7 @@ import { Pipe, PipeTransform, inject } from '@angular/core';
 import { I18nService } from '../../core/services/i18n.service';
 import { xenoCantoVocalizationLabelKey } from '../../core/models';
 
-/**
- * Pipe "impuro" a propósito, igual que TranslatePipe/SpeciesNamePipe: debe
- * re-evaluarse cuando cambia I18nService.lang. Traduce un tag de tipo de
- * vocalización de Xeno-canto (species.typicalVocalizations) si está en el
- * diccionario conocido; si no, muestra el texto tal cual vino de la fuente
- * en vez de romper — Xeno-canto es texto semi-libre, no un enum cerrado.
- */
+/** Pipe impuro como TranslatePipe: traduzco el tipo de vocalización de Xeno-canto si lo conozco y si no lo muestro tal cual. */
 @Pipe({
   name: 'vocalizationTag',
   standalone: true,

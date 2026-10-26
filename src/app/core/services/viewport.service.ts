@@ -2,11 +2,7 @@ import { Injectable, PLATFORM_ID, afterNextRender, inject, signal } from '@angul
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import breakpoints from '../../theme/breakpoints.json';
 
-/**
- * Ancho de la ventana como signal, con los mismos cortes que Tailwind (breakpoints.json).
- * Arranca en false y se actualiza tras el primer render: así el cliente hidrata el mismo
- * HTML que generó el servidor y solo después cambia lo que dependa del ancho.
- */
+/** Ancho de la ventana como signal con los cortes de Tailwind; arranco en false para hidratar el mismo HTML del servidor. */
 @Injectable({ providedIn: 'root' })
 export class ViewportService {
   private readonly document = inject(DOCUMENT);

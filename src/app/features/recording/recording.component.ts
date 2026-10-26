@@ -294,9 +294,7 @@ export class RecordingComponent {
         species: result.species,
         recordedAt,
         audioStoragePath: attempt.uploaded.storagePath,
-        // Válida solo por unos minutos; suficiente para revisar el resultado
-        // antes de guardarlo. Tras guardar, el backend firma una nueva URL
-        // cada vez que se pide la detección, a partir de audioStoragePath.
+        // Vale unos minutos, suficiente para revisar antes de guardar; después el backend firma una nueva en cada lectura.
         audioUrl: attempt.uploaded.signedUrl,
         durationSeconds,
         confidence: result.confidence,
@@ -361,9 +359,7 @@ export class RecordingComponent {
     return code === AI_ENGINE_UNAVAILABLE_CODE || ENGINE_ASLEEP_STATUSES.includes(error.status);
   }
 
-  // Sin señal: la grabación queda en la cola de IndexedDB y
-  // PendingRecordingsSyncService la clasifica y guarda sola al volver la
-  // conexión. El GPS sí se intenta: no depende de datos móviles.
+  // Sin señal dejo la grabación en IndexedDB y PendingRecordingsSyncService la envía al volver la conexión; el GPS sí lo intento.
   private async saveForLater(submission: AudioSubmission): Promise<void> {
     await this.pendingSync.enqueue({
       recordedAt: new Date().toISOString(),
@@ -375,13 +371,7 @@ export class RecordingComponent {
     this.savedOffline.set(true);
   }
 
-  /**
-   * El backend ya distingue estas causas con status codes y mensajes
-   * distintos (502 = motor de IA caído, 422 con el detail de calidad de
-   * audio rechazada, 422 "sin especie identificada"); antes se mostraba el
-   * mismo "revisa tu conexión" para las tres, sugiriendo un problema de red
-   * que no existía en los casos 422.
-   */
+  /** Doy un mensaje distinto por causa (motor caído u ocupado, audio rechazado, sin especie) en vez de culpar siempre a la red. */
   private resolveClassifyErrorMessage(error: unknown): string {
     const code = error instanceof HttpErrorResponse ? (error.error as { errorCode?: string } | null)?.errorCode : undefined;
     if (code === AUDIO_TOO_LARGE_CODE) return this.uploadProblemMessage('tooLarge');

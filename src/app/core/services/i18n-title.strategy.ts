@@ -3,11 +3,7 @@ import { Title } from '@angular/platform-browser';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 import { I18nService } from './i18n.service';
 
-/**
- * El `title` de cada ruta es una clave de i18n, no un texto: esta estrategia
- * la traduce y le antepone el nombre de la app. El effect vuelve a aplicar el
- * título cuando cambia el idioma, sin esperar a otra navegación.
- */
+/** Traduzco la clave i18n del title de cada ruta y le antepongo el nombre de la app; el effect lo reaplica al cambiar el idioma. */
 @Injectable({ providedIn: 'root' })
 export class I18nTitleStrategy extends TitleStrategy {
   private readonly title = inject(Title);

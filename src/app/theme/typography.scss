@@ -1,9 +1,5 @@
-// AlaSonora — Fuentes locales (subconjunto latino, OFL).
-// Viven en public/assets/fonts para que el Service Worker las guarde con
-// el grupo "assets" y la app conserve su tipografía sin conexión.
-//   Bricolage Grotesque     → títulos (archivo variable, pesos 600–800)
-//   Atkinson Hyperlegible   → texto (legible con sol directo)
-//   IBM Plex Sans Condensed → datos: kHz, dB, confianza, tiempos
+// Fuentes locales (latino, OFL) en public/assets/fonts para que el service worker las guarde: Bricolage (títulos),
+// Atkinson Hyperlegible (texto) e IBM Plex Sans Condensed (datos).
 
 // Íconos: subconjunto de Material Symbols Outlined (24 px, peso 400, sin relleno) con solo los íconos
 // de src/app/theme/material-icons.json, incrustado en el CSS (ver scripts/material-icons.mjs).

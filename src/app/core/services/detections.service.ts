@@ -11,22 +11,14 @@ type DetectionApiResponse = Omit<Detection, 'syncStatus'>;
 
 const OBSERVER_PHOTOS_BUCKET = 'observer-photos';
 
-/**
- * Cuaderno de campo contra el backend real. `getAll()` es el feed público
- * (GET /api/detections?visibility=public, usado por el mapa); `getMine()`
- * es el historial del usuario autenticado (GET /api/detections/mine).
- */
+/** Cuaderno de campo: getAll() es el feed público del mapa y getMine() el historial del usuario. */
 @Injectable({ providedIn: 'root' })
 export class DetectionsService {
   private readonly http = inject(HttpClient);
   private readonly supabase = inject(SupabaseClientService).client;
   private readonly baseUrl = `${environment.apiBaseUrl}/detections`;
 
-  /**
-   * `fresh` salta la caché de transferencia del SSR, que responde esta URL con la
-   * foto tomada al renderizar hasta que la app se estabiliza; sin esto, una detección
-   * guardada después de cargar la página nunca aparecería.
-   */
+  /** fresh salta la caché de transferencia del SSR: sin esto, una detección guardada después de cargar no aparecería. */
   async getAll(fresh = false): Promise<Detection[]> {
     const params = new HttpParams().set('visibility', 'public');
     const detections = await firstValueFrom(
@@ -55,10 +47,7 @@ export class DetectionsService {
     return detections.map((d) => this.withSyncStatus(d));
   }
 
-  // El backend firma una URL de audio nueva en cada solicitud; llamar al
-  // endpoint dedicado (en vez de filtrar getMine()) es lo que hace que una
-  // detección PRIVATE siga siendo reproducible sin importar cuánto tiempo
-  // haya pasado desde que se subió.
+  // Uso el endpoint dedicado porque el backend firma una URL de audio nueva en cada solicitud.
   async getById(id: string): Promise<Detection | undefined> {
     try {
       const detection = await firstValueFrom(
@@ -84,13 +73,7 @@ export class DetectionsService {
     return detections.map((d) => this.withSyncStatus(d));
   }
 
-  /**
-   * Sube la foto propia del observador para una detección ya guardada al
-   * bucket privado `observer-photos` (mismo patrón de carpeta por
-   * auth.uid() que avatars/recordings) y persiste el path en el backend,
-   * que la firma bajo demanda como el audio — nunca la foto de referencia
-   * oficial de la especie.
-   */
+  /** Subo la foto del observador al bucket privado observer-photos y guardo el path en el backend, que la firma como el audio. */
   async uploadObserverPhoto(detectionId: string, userId: string, file: File): Promise<Detection> {
     // Nombre único sin upsert: con upsert Storage exige también SELECT y la política no lo tenía.
     const path = `${userId}/${storageObjectName(file, detectionId)}`;

@@ -1,6 +1,4 @@
-// Se registra en lugar de ngsw-worker.js (ver app.config.ts): conserva el service worker
-// de Angular para la caché del app shell (ngsw-config.json) y suma el manejador de
-// Background Sync para las grabaciones hechas sin conexión.
+// Lo registro en lugar de ngsw-worker.js: conserva la caché de Angular y suma Background Sync para las grabaciones offline.
 importScripts('./ngsw-worker.js');
 
 // Debe coincidir con PENDING_RECORDINGS_SYNC_TAG en pending-recordings-sync.service.ts.
@@ -8,12 +6,8 @@ const PENDING_RECORDINGS_SYNC_TAG = 'alasonora-pending-recordings';
 
 self.addEventListener('sync', (event) => {
   if (event.tag !== PENDING_RECORDINGS_SYNC_TAG) return;
-  // El envío necesita la sesión de Supabase, que vive en el localStorage de
-  // la página (inaccesible desde el SW): aquí se le pide a una pestaña
-  // abierta que vacíe la cola de IndexedDB y se espera su respuesta. Si no
-  // hay pestaña o la cola no quedó vacía, se rechaza para que el navegador
-  // reintente el sync más tarde (la app además la vacía al volver a abrirse
-  // y con el evento `online`).
+  // El envío necesita la sesión, que vive en el localStorage de la página: le pido a una pestaña que vacíe la cola
+  // y, si no hay pestaña o quedó algo, rechazo para que el navegador reintente el sync.
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((clients) => {
       if (clients.length === 0) throw new Error('No open AlaSonora tab to sync from');

@@ -12,9 +12,8 @@ export const usernameValidators: ValidatorFn[] = [
 ];
 
 /**
- * Pregunto al backend si está libre (sin distinguir mayúsculas). `current` es el nombre que ya
- * tiene el usuario, para no marcar como ocupado el suyo propio al editar el perfil. Si la consulta
- * falla no bloqueo el formulario: el backend vuelve a validar al guardar.
+ * Pregunto al backend si el nombre está libre; current evita marcar el propio al editar y, si falla, no bloqueo:
+ * el backend valida otra vez al guardar.
  */
 export function usernameAvailableValidator(
   check: (username: string) => Promise<{ available: boolean }>,

@@ -5,11 +5,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 const MAX_KHZ = 12;
 const LABEL_STEP_KHZ = 2;
 
-/**
- * Elemento firma: el eje de frecuencias de un sonograma fijo al borde izquierdo
- * (solo escritorio). Agudos arriba, graves abajo; una "línea de lectura" azufre
- * sigue el scroll. Solo decorativo.
- */
+/** Eje de frecuencias fijo al borde izquierdo (solo escritorio) con una línea de lectura que sigue el scroll; es decorativo. */
 @Component({
   selector: 'app-khz-ruler',
   standalone: true,

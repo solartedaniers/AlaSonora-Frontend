@@ -9,11 +9,8 @@ const STORAGE_KEY = 'alasonora.lang';
 type TranslationDict = Record<string, unknown>;
 
 /**
- * Servicio de i18n construido a medida (sin dependencia externa) que
- * carga los archivos i18n/es.json / i18n/en.json en tiempo de ejecución.
- * Guarda las traducciones en un signal para que los componentes que las
- * consumen (vía TranslatePipe) se re-rendericen automáticamente al
- * cambiar de idioma, sin recargar la página.
+ * i18n propio sin dependencias: cargo es.json/en.json en ejecución y guardo las traducciones en un signal
+ * para que la UI cambie de idioma sin recargar.
  */
 @Injectable({ providedIn: 'root' })
 export class I18nService {
@@ -72,10 +69,7 @@ export class I18nService {
     this.dict.set(data);
   }
 
-  // En el servidor no hay un origen HTTP al que pedir "i18n/es.json" (en el
-  // prerender de `ng build` ni siquiera hay servidor corriendo), así que se
-  // importa el mismo archivo de public/ directamente. En el navegador este
-  // import() nunca se ejecuta.
+  // En el servidor no hay origen HTTP para pedir el JSON, así que importo el archivo de public/; en el navegador nunca corre.
   private async importDictionary(lang: AppLang): Promise<TranslationDict> {
     const module =
       lang === 'en'

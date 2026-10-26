@@ -99,9 +99,7 @@ export class ProfileComponent implements OnInit {
     this.avatarError.set(null);
     this.uploadingAvatar.set(true);
     try {
-      // Leo la sesión directamente y no el signal `currentUser`, que se llena cuando
-      // resuelve getSession() (ver UserService.isAuthenticated). Con `currentUser()?.id`
-      // la subida no hacía nada si la página abría antes de que el signal resolviera.
+      // Leo la sesión directamente y no currentUser: si la página abría antes de que resolviera, la subida no hacía nada.
       const userId = await this.user.getUserId();
       if (!userId) {
         this.avatarError.set(this.i18n.translate('profile.avatarUploadError'));

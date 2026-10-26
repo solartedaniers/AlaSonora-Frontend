@@ -79,11 +79,7 @@ export class ProfileService {
     return profile;
   }
 
-  /**
-   * Subo directo al bucket público `avatars` y devuelvo la URL pública. La carpeta es el
-   * auth.uid() de la sesión (lo exige la política RLS) y el nombre es único, así que no uso
-   * upsert: con upsert, Storage exige además permiso de SELECT y la subida fallaba por RLS.
-   */
+  /** Subo al bucket público avatars en la carpeta auth.uid() con nombre único; no uso upsert porque exige SELECT y fallaba por RLS. */
   async uploadAvatar(userId: string, file: File): Promise<string> {
     const path = `${userId}/${storageObjectName(file)}`;
     const { error } = await this.supabase.storage.from(AVATAR_BUCKET).upload(path, file, { contentType: file.type });

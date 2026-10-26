@@ -18,9 +18,7 @@ export class AdminAccessService {
         this.isAdmin.set(false);
         return;
       }
-      // Sin este catch, un fallo en GET /api/profile/me (401 transitorio, fila
-      // sin permisos, etc.) dejaba isAdmin en false de forma silenciosa, sin
-      // rastro en consola para diagnosticar por qué no aparecía el panel.
+      // Registro el fallo de GET /api/profile/me: antes isAdmin quedaba en false sin rastro en consola.
       this.profileService
         .getMine()
         .then((profile) => this.isAdmin.set(profile.systemRole === 'admin'))

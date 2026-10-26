@@ -1,14 +1,6 @@
-/**
- * Contratos de mensajes tipados para la comunicación con los 2 workers
- * de AlaSonora. Definir interfaces explícitas (en vez de pasar objetos
- * sueltos sin tipar por postMessage) evita errores silenciosos: TypeScript
- * verifica en tiempo de compilación que el hilo principal y cada worker
- * están de acuerdo sobre la forma de cada mensaje.
- */
+/** Contratos tipados de los mensajes con los dos workers: TypeScript verifica que ambos lados usen la misma forma. */
 
-// ---------------------------------------------------------------------------
-// 1. Web Worker: audio-processing.worker.ts (cálculo de FFT / espectrograma)
-// ---------------------------------------------------------------------------
+// 1. Web Worker: audio-processing.worker.ts (FFT y espectrograma)
 
 export interface AudioProcessingRequest {
   type: 'process-audio-chunk';
@@ -28,12 +20,7 @@ export interface AudioProcessingResponse {
   rmsDb: number;
 }
 
-/**
- * Pide al worker cerrar la sesión de grabación actual: concatenar todas las
- * muestras PCM acumuladas desde el primer `process-audio-chunk` y
- * empaquetarlas como un WAV, sin bloquear el hilo principal con ese trabajo
- * de fragmentación/codificación.
- */
+/** Pido al worker cerrar la grabación y empaquetar todo el PCM acumulado como WAV, fuera del hilo principal. */
 export interface FinalizeRecordingRequest {
   type: 'finalize-recording';
 }
@@ -62,9 +49,7 @@ export interface RecordingSpectrogramResponse {
 export type AudioWorkerInboundMessage = AudioProcessingRequest | FinalizeRecordingRequest | RecordingSpectrogramRequest;
 export type AudioWorkerOutboundMessage = AudioProcessingResponse | RecordingEncodedResponse | RecordingSpectrogramResponse;
 
-// ---------------------------------------------------------------------------
 // 2. Shared Worker: sync.worker.ts (estado compartido entre pestañas)
-// ---------------------------------------------------------------------------
 
 export interface SharedWorkerHello {
   type: 'hello';

@@ -7,18 +7,11 @@ const STORAGE_KEY = 'alasonora.theme';
 const CHROME_COLOR_TOKEN = '--color-chrome';
 const THEME_COLOR_META = 'meta[name="theme-color"]';
 
-/**
- * Servicio de tema. Patrón: fuente única de verdad reactiva (signal) que
- * un `effect` sincroniza con el DOM (clase en <html>) y con localStorage.
- * Separado de los componentes visuales para respetar SRP: un componente de
- * UI (theme-toggle) solo invoca este servicio, nunca manipula el DOM directo.
- */
+/** Guardo el tema en un signal que un effect sincroniza con la clase de <html> y con localStorage. */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private readonly document = inject(DOCUMENT);
-  // En el servidor (SSR/prerender) no hay localStorage ni matchMedia: el HTML
-  // sale sin clase de tema y el script inline de index.html resuelve la
-  // elección guardada (o «sistema») antes del primer pintado.
+  // En el servidor no hay localStorage ni matchMedia: el script inline de index.html aplica el tema antes del primer pintado.
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly mode = signal<ThemeMode>(this.readStoredMode());

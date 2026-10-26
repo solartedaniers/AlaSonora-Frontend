@@ -1,12 +1,5 @@
-// AlaSonora — Design tokens («Sonograma de campo»)
-//
-// Fuente única de verdad del diseño. Componentes, Tailwind (tailwind.config.js)
-// y el canvas del espectrograma leen SOLO estas variables.
-//
-// Claro = la caja de luz de una guía de campo al amanecer: tinta petróleo
-// sobre blanco frío y el amarillo azufre como la energía del canto.
-// Oscuro = la hora de grabar antes del alba: el mismo sonograma visto como
-// mapa de calor. El rojo bromelia se reserva para grabar / en vivo.
+// Fuente única de verdad del diseño: componentes, Tailwind y el canvas leen solo estas variables.
+// Claro: tinta petróleo sobre blanco frío con amarillo azufre; oscuro: el sonograma como mapa de calor, y el rojo solo para grabar.
 
 @mixin light-palette {
   color-scheme: light;

@@ -13,25 +13,12 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 /**
- * ISR (Incremental Static Regeneration) para las rutas SSR públicas.
- *
- * Angular no trae ISR nativo, así que se implementa como caché
- * stale-while-revalidate: la primera visita renderiza con SSR y guarda el
- * HTML; las siguientes lo reciben al instante desde memoria, y si la copia
- * tiene más de ISR_REVALIDATE_MS se regenera en segundo plano (el usuario
- * que dispara la regeneración igual recibe la copia vieja, sin esperar).
- * Solo se cachean rutas públicas sin datos por usuario: el servidor nunca
- * conoce la sesión (vive en el localStorage del navegador).
- *
- * ponytail: caché en memoria por proceso (se pierde al reiniciar y no se
- * comparte entre instancias); si se despliega con varias instancias, moverla
- * a Redis o delegarla a un CDN con el Cache-Control que ya se envía abajo.
+ * ISR para las rutas SSR públicas: sirvo el HTML guardado al instante y, si pasó ISR_REVALIDATE_MS, lo regenero en segundo plano.
+ * ponytail: caché en memoria por proceso; con varias instancias la muevo a Redis o a un CDN.
  */
 const ISR_ROUTES = new Set(['/map']);
 const ISR_REVALIDATE_MS = 60_000;
-// Pasado este tiempo la copia ya no se sirve "vieja": se renderiza de nuevo y
-// se espera (evita que el primer visitante tras horas sin tráfico reciba un
-// HTML de hace horas). Coincide con stale-while-revalidate=300 de abajo.
+// Pasado este tiempo ya no sirvo la copia vieja: renderizo de nuevo y espero. Coincide con stale-while-revalidate=300.
 const ISR_MAX_STALE_MS = 300_000;
 const ISR_CACHE_CONTROL = 'public, max-age=0, s-maxage=60, stale-while-revalidate=300';
 
@@ -89,9 +76,7 @@ app.get(/.*/, (req, res, next) => {
     .catch(next);
 });
 
-// Solo los archivos con hash en el nombre (main-, chunk-, styles-…) cambian de nombre en cada
-// build y pueden guardarse un año. El resto (sw.js, ngsw.json, manifest, i18n, íconos, fuentes)
-// conserva su nombre: se revalida en cada visita para que un despliegue nuevo llegue de inmediato.
+// Solo los archivos con hash en el nombre se guardan un año; el resto (sw.js, ngsw.json, i18n, íconos…) se revalida en cada visita.
 const HASHED_ASSET = /(^|[\\/])(chunk|main|polyfills|styles|worker)-[\w-]{8,9}\.(js|css)$|[\\/]media[\\/]/;
 const REVALIDATE = 'no-cache';
 

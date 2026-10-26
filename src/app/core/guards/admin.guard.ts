@@ -19,9 +19,7 @@ export const adminGuard: CanActivateFn = async () => {
     const profile = await profileService.getMine();
     return profile.systemRole === 'admin' ? true : router.createUrlTree(['/dashboard']);
   } catch (error) {
-    // Un getMine() rechazado sin capturar dejaba la promesa de la guardia
-    // colgada (Angular Router la trata como navegación cancelada, sin
-    // redirigir ni mostrar nada) en vez de degradar de forma visible.
+    // Atrapo el rechazo de getMine(): sin esto la guardia quedaba colgada y la navegación se cancelaba sin aviso.
     logger.error('AdminGuard', 'could not verify the admin role', error);
     return router.createUrlTree(['/dashboard']);
   }

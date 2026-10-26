@@ -1,8 +1,6 @@
 /**
- * Tailwind is only a helper here: every value comes from the CSS variables in
- * src/app/theme/tokens.scss. The default palette, spacing, radii, shadows and
- * type scale are replaced (not extended), so classes like `bg-white` or
- * `text-gray-700` simply don't exist.
+ * Tailwind solo ayuda: cada valor sale de las variables de src/app/theme/tokens.scss y reemplazo (no extiendo) su paleta,
+ * espaciados y tipografía, así que clases como bg-white no existen.
  */
 
 const COLOR_TOKENS = [
@@ -22,8 +20,7 @@ const COLOR_TOKENS = [
   'moss', 'on-moss', 'moss-ink', 'sky', 'on-sky', 'sky-ink',
 ];
 
-// Opacity modifiers (`bg-primary/20`) can't be applied to a bare var(), so they
-// are resolved with color-mix against the same token.
+// Los modificadores de opacidad (bg-primary/20) no funcionan con var(), así que los resuelvo con color-mix.
 const tokenColor = (name) => ({ opacityValue }) => {
   const color = `var(--color-${name})`;
   if (opacityValue === undefined) return color;
@@ -40,8 +37,7 @@ const scale = (prefix, keys) => Object.fromEntries(keys.map((key) => [key, `var(
 module.exports = {
   content: ['./src/**/*.{html,ts}'],
   darkMode: ['class', '.theme-dark'],
-  // The color functions above already handle opacity, so the legacy
-  // `--tw-*-opacity` plumbing is unnecessary.
+  // Las funciones de color ya manejan la opacidad, así que no necesito las variables --tw-*-opacity.
   corePlugins: {
     backgroundOpacity: false,
     textOpacity: false,
@@ -142,7 +138,7 @@ module.exports = {
     },
   },
   plugins: [
-    // `current:` styles the active route link through its aria-current attribute.
+    // current: pinta el enlace de la ruta activa por su atributo aria-current.
     ({ addVariant }) => addVariant('current', '&[aria-current="page"]'),
   ],
 };

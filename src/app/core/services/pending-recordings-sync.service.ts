@@ -15,13 +15,8 @@ export const PENDING_RECORDINGS_SYNC_TAG = 'alasonora-pending-recordings';
 export const FALLBACK_LOCATION: GeoLocation = { latitude: 4.6097, longitude: -74.0817 };
 
 /**
- * Modo campo: las grabaciones hechas sin señal quedan en IndexedDB
- * (OfflineStorageService) y las envío solas al volver la conexión.
- * Cualquiera de estos disparadores vacía la cola:
- *  - Background Sync: el service worker (public/sw.js) lanza `sync` al volver
- *    la conexión y avisa a las pestañas abiertas (solo Chromium).
- *  - El evento `online` de window (Firefox/Safari no tienen Background Sync).
- *  - El arranque de la app, por lo que quedó de una sesión anterior.
+ * Envío solas las grabaciones que quedaron en IndexedDB sin señal: al recibir el sync del service worker,
+ * con el evento online (Firefox/Safari) o al arrancar la app.
  */
 @Injectable({ providedIn: 'root' })
 export class PendingRecordingsSyncService implements OnDestroy {
@@ -70,9 +65,7 @@ export class PendingRecordingsSyncService implements OnDestroy {
 
   async syncNow(): Promise<void> {
     if (!navigator.onLine) return;
-    // Web Lock: el mensaje del SW y el evento `online` llegan juntos a cada pestaña.
-    // Vacío la cola de a una vez (también entre pestañas) y la leo solo con el lock,
-    // así una grabación ya enviada nunca se sube ni se guarda dos veces.
+    // Con el Web Lock vacío la cola de a una vez, también entre pestañas: así nunca subo ni guardo dos veces la misma grabación.
     await this.runExclusively(() => this.drain());
   }
 
@@ -90,9 +83,7 @@ export class PendingRecordingsSyncService implements OnDestroy {
       try {
         await this.send(userId, recording);
       } catch (error) {
-        // 422 = el clasificador rechazó este audio para siempre (sin especie o mala
-        // calidad): reintentar fallaría igual, así que sale de la cola. Cualquier
-        // otro fallo (red, backend caído) se queda y se reintenta en el siguiente disparo.
+        // Un 422 es un rechazo definitivo del audio, así que lo saco de la cola; cualquier otro fallo se reintenta luego.
         if (!(error instanceof HttpErrorResponse && error.status === 422)) return;
         this.logger.warn('PendingSync', 'queued recording rejected by the classifier, dropping it', error);
       }

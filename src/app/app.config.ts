@@ -28,23 +28,13 @@ export const appConfig: ApplicationConfig = {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
-    // Fuerza la creación temprana de ThemeService/I18nService y ESPERA el
-    // diccionario antes del primer render: sin esto el HTML generado en el
-    // servidor (SSG/SSR) saldría con claves crudas ("landing.title") y, al
-    // hidratar, el cliente las pintaría encima del texto ya traducido.
+    // Creo ThemeService/I18nService temprano y espero el diccionario: si no, el HTML del servidor sale con claves crudas.
     provideAppInitializer(() => {
       inject(ThemeService);
       return inject(I18nService).ready;
     }),
-    // Hidratación: el cliente reutiliza el DOM que llegó del servidor en vez
-    // de destruirlo y volver a pintarlo. withEventReplay guarda los clics
-    // hechos antes de que termine la hidratación; withIncrementalHydration
-    // permite hidratar bloques @defer solo cuando se necesitan.
-    // includeNonCacheableRequests: Spring Security responde todo con
-    // "Cache-Control: no-store", y sin esto Angular no pasaría al cliente los
-    // datos que el servidor ya pidió (p. ej. el feed de /map), obligando al
-    // navegador a repetir la misma petición. Es seguro: en el servidor nunca
-    // hay sesión, así que ahí solo se hacen peticiones públicas.
+    // Hidrato reutilizando el DOM del servidor; withEventReplay guarda los clics previos y @defer se hidrata cuando hace falta.
+    // includeNonCacheableRequests pasa al cliente las respuestas no-store de Spring; es seguro porque en el servidor nunca hay sesión.
     provideClientHydration(
       withEventReplay(),
       withIncrementalHydration(),
