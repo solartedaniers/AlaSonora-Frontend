@@ -19,21 +19,16 @@
   padding: 0;
 }
 
-// La lámina y su botón de borrar son hermanos: el botón flota en la esquina de la foto.
+// La lámina y su botón de borrar son hermanos: el botón va al pie, en la fila del badge de certeza,
+// que es lo último de la lámina; así nunca tapa la foto ni su aviso.
 .history-item {
   position: relative;
 }
 
 .history-item__delete {
   position: absolute;
-  inset-block-start: calc(var(--space-unit) * 3);
-  inset-inline-end: calc(var(--space-unit) * 3);
-
-  // En el celular la lámina es una fila: lo dejo en la esquina sin tapar el nombre.
-  @media (max-width: calc(theme('screens.sm') - 1px)) {
-    inset-block-start: 0;
-    inset-inline-end: 0;
-  }
+  inset-block-end: 0;
+  inset-inline-end: 0;
 }
 
 .history-sheet {
@@ -48,7 +43,6 @@
     grid-template-columns: calc(var(--space-unit) * 24) minmax(0, 1fr);
     column-gap: calc(var(--space-unit) * 4);
     align-items: start;
-    padding-inline-end: var(--touch-target);
 
     > :not(.history-sheet__print) {
       grid-column: 2;
@@ -94,9 +88,22 @@
 // Lista: una línea de registro por detección, separadas por filetes; el botón de borrar va al final.
 .history-list-item {
   display: flex;
-  align-items: center;
+  // En el celular la fila tiene dos líneas: alineo el botón con la primera, la del badge.
+  align-items: flex-start;
   gap: calc(var(--space-unit) * 3);
   border-block-end: var(--stroke-hairline) solid var(--color-outline-variant);
+
+  > app-delete-detection-button {
+    margin-block-start: calc(var(--space-unit) * 4);
+  }
+
+  @screen md {
+    align-items: center;
+
+    > app-delete-detection-button {
+      margin-block-start: 0;
+    }
+  }
 }
 
 .history-row {
