@@ -5,7 +5,7 @@ import { LoadingStateComponent } from '../../shared/components/loading-state/loa
 import { CountUpComponent } from '../../shared/components/count-up/count-up.component';
 import { NavHeaderComponent } from '../../shared/components/nav-header/nav-header.component';
 import { ConfidenceBadgeComponent } from '../../shared/components/confidence-badge/confidence-badge.component';
-import { SonogramGlyphComponent } from '../../shared/components/sonogram-glyph/sonogram-glyph.component';
+import { BrandSymbolComponent } from '../../shared/components/brand-symbol/brand-symbol.component';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { SpeciesNamePipe } from '../../shared/pipes/species-name.pipe';
 import { DetectionsService } from '../../core/services/detections.service';
@@ -25,7 +25,7 @@ type HistoryLoadState = 'loading' | 'ready' | 'error';
     DatePipe,
     NavHeaderComponent,
     ConfidenceBadgeComponent,
-    SonogramGlyphComponent,
+    BrandSymbolComponent,
     TranslatePipe,
     SpeciesNamePipe,
   ],

@@ -75,7 +75,7 @@
       @case ('ready') {
         @if (all().length === 0) {
           <section class="state-panel">
-            <app-sonogram-glyph class="w-24 h-20 text-primary" />
+            <app-brand-symbol class="w-24 h-24" />
             <h2 class="text-3xl font-extrabold tracking-display">{{ 'history.emptyTitle' | translate }}</h2>
             <p class="max-w-md text-on-surface-variant">{{ 'history.emptyBody' | translate }}</p>
             <a routerLink="/record" class="btn btn--sulfur">

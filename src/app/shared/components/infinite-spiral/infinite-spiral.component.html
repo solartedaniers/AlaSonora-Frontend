@@ -17,7 +17,7 @@
       @if (isEmpty()) {
         @for (frame of emptyFrames; track frame) {
           <div class="spiral-item spiral-item--empty" [style.--i]="frame">
-            <app-sonogram-glyph class="spiral-item__glyph" />
+            <app-brand-symbol decorative class="spiral-item__glyph" />
           </div>
         }
       } @else {

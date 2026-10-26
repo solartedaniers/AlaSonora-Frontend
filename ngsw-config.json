@@ -9,6 +9,7 @@
       "resources": {
         "files": [
           "/favicon.ico",
+          "/images/brand/alasonora-symbol.webp",
           "/index.csr.html",
           "/manifest.webmanifest",
           "/*.css",
