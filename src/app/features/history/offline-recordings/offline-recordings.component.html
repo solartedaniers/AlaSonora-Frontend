@@ -1,0 +1,39 @@
+@if (rows().length > 0) {
+  <section class="offline-log" aria-labelledby="offline-log-title">
+    <header class="offline-log__header">
+      <div>
+        <h2 id="offline-log-title" class="text-2xl font-extrabold tracking-display">{{ 'history.offline.title' | translate }}</h2>
+        <p class="mt-1 text-on-surface-variant">{{ 'history.offline.subtitle' | translate }}</p>
+      </div>
+      @if (hasPending() && online()) {
+        <button type="button" class="btn btn--quiet min-h-touch px-4 text-sm shrink-0" [disabled]="retrying()" (click)="retry()">
+          <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+          {{ (retrying() ? 'history.offline.retrying' : 'history.offline.retry') | translate }}
+        </button>
+      }
+    </header>
+
+    <ul class="offline-log__list" aria-live="polite">
+      @for (row of rows(); track row.id) {
+        <li class="offline-log__row" [attr.data-status]="row.status">
+          <span class="material-symbols-outlined offline-log__icon" aria-hidden="true">{{ statusIcons[row.status] }}</span>
+          <span class="min-w-0">
+            <span class="block font-bold">{{ 'history.offline.status.' + row.status | translate }}</span>
+            <span class="block font-data text-sm text-on-surface-variant">
+              {{ row.recordedAt | date: 'short' }}
+              @if (row.speciesName) {
+                · {{ row.speciesName }}
+              }
+            </span>
+            @if (row.status === 'failed') {
+              <span class="block text-sm text-on-surface-variant">{{ 'history.offline.failedHint' | translate }}</span>
+            }
+          </span>
+          @if (row.detectionId) {
+            <a [routerLink]="['/result', row.detectionId]" class="offline-log__link">{{ 'history.offline.openDetection' | translate }}</a>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}

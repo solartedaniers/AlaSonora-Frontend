@@ -1,11 +1,12 @@
 import { Injectable, OnDestroy, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { GeoLocation } from '../models';
+import { Detection, GeoLocation } from '../models';
 import { ClassificationService } from './classification.service';
 import { DetectionsService } from './detections.service';
 import { OfflineStorageService, PendingRecording } from './offline-storage.service';
 import { UserService } from './user.service';
 import { LoggerService } from './logger.service';
+import { OfflineRecordingLogEntry, OfflineRecordingOutcome, OfflineRecordingsLogService } from './offline-recordings-log.service';
 
 /** Debe coincidir con PENDING_RECORDINGS_SYNC_TAG en public/sw.js. */
 export const PENDING_RECORDINGS_SYNC_TAG = 'alasonora-pending-recordings';
@@ -25,6 +26,7 @@ export class PendingRecordingsSyncService implements OnDestroy {
   private readonly classificationService = inject(ClassificationService);
   private readonly detectionsService = inject(DetectionsService);
   private readonly userService = inject(UserService);
+  private readonly offlineLog = inject(OfflineRecordingsLogService);
 
   private started = false;
   /** Sin Web Locks encadeno las sincronizaciones aquí: solo protege esta pestaña, no las demás. */
@@ -80,23 +82,47 @@ export class PendingRecordingsSyncService implements OnDestroy {
     if (!userId) return;
 
     for (const recording of await this.offlineStorage.listPending()) {
+      let entry: OfflineRecordingLogEntry;
       try {
-        await this.send(userId, recording);
+        entry = PendingRecordingsSyncService.logEntry(recording, 'synced', await this.send(userId, recording));
       } catch (error) {
         // Un 422 es un rechazo definitivo del audio, así que lo saco de la cola; cualquier otro fallo se reintenta luego.
         if (!(error instanceof HttpErrorResponse && error.status === 422)) return;
         this.logger.warn('PendingSync', 'queued recording rejected by the classifier, dropping it', error);
+        entry = PendingRecordingsSyncService.logEntry(recording, 'failed');
       }
+      // Anoto el resultado antes de borrar el audio, así la fila nunca desaparece de la vista.
+      await this.offlineLog.record(entry);
       await this.offlineStorage.remove(recording.id);
     }
   }
 
+  private static logEntry(
+    recording: PendingRecording,
+    outcome: OfflineRecordingOutcome,
+    detection?: Detection,
+  ): OfflineRecordingLogEntry {
+    const species = detection?.species;
+    return {
+      id: recording.id,
+      recordedAt: recording.recordedAt,
+      processedAt: new Date().toISOString(),
+      outcome,
+      detectionId: detection?.id,
+      species: species && {
+        commonName: species.commonName,
+        commonNameEn: species.commonNameEn,
+        scientificName: species.scientificName,
+      },
+    };
+  }
+
   // Los mismos pasos del flujo en línea (RecordingComponent → ResultComponent) sin la
   // pantalla de revisión: nadie la revisa, así que la guardo PRIVATE y aparece en el historial.
-  private async send(userId: string, recording: PendingRecording): Promise<void> {
+  private async send(userId: string, recording: PendingRecording): Promise<Detection> {
     const { storagePath, signedUrl } = await this.classificationService.uploadRecording(userId, recording.audioBlob);
     const result = await this.classificationService.classify(signedUrl, recording.recordedAt, recording.gpsLocation);
-    await this.detectionsService.create({
+    return this.detectionsService.create({
       speciesId: result.species.id,
       recordedAt: recording.recordedAt,
       audioStoragePath: storagePath,

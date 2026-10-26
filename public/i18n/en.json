@@ -372,7 +372,19 @@
     "viewList": "List",
     "statusAll": "All",
     "statusValidated": "Validated",
-    "statusPending": "Pending Offline",
+    "offline": {
+      "title": "Offline recordings",
+      "subtitle": "The recordings you made without a connection, saved on this device.",
+      "status": {
+        "pending": "Waiting to upload",
+        "synced": "Synced",
+        "failed": "Could not be identified"
+      },
+      "failedHint": "The AI engine rejected this audio, so it was not saved as a detection.",
+      "openDetection": "View detection",
+      "retry": "Retry now",
+      "retrying": "Syncing…"
+    },
     "emptyTitle": "No recordings yet",
     "emptyBody": "Record or upload your first audio to start your field notebook.",
     "stats": {

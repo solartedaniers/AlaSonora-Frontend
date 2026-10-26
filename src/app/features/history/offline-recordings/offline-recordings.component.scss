@@ -1,0 +1,62 @@
+.offline-log {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-unit) * 4);
+  padding: calc(var(--space-unit) * 5);
+  border: var(--stroke-hairline) solid var(--color-outline-variant);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-container-low);
+}
+
+.offline-log__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(var(--space-unit) * 3);
+}
+
+.offline-log__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+// En el celular el enlace baja a su propia línea para no apretar el texto.
+.offline-log__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: calc(var(--space-unit) * 1) calc(var(--space-unit) * 3);
+  padding-block: calc(var(--space-unit) * 3);
+  border-block-start: var(--stroke-hairline) solid var(--color-outline-variant);
+
+  @screen sm {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+.offline-log__icon {
+  color: var(--color-on-surface-variant);
+}
+
+.offline-log__row[data-status='synced'] .offline-log__icon {
+  color: var(--color-success);
+}
+
+.offline-log__row[data-status='failed'] .offline-log__icon {
+  color: var(--color-error);
+}
+
+.offline-log__link {
+  grid-column: 2;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+
+  @screen sm {
+    grid-column: 3;
+  }
+}

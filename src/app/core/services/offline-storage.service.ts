@@ -17,10 +17,14 @@ export interface PendingRecording {
   gpsLocation?: GeoLocation;
 }
 
+/** Lo que la vista necesita de una grabación en cola, sin cargar su audio. */
+export type PendingRecordingSummary = Pick<PendingRecording, 'id' | 'recordedAt'>;
+
 /** Envuelvo IndexedDB en una API de promesas: aquí guardo las grabaciones sin conexión hasta que se sincronizan. */
 @Injectable({ providedIn: 'root' })
 export class OfflineStorageService {
   readonly pendingCount = signal(0);
+  readonly pending = signal<PendingRecordingSummary[]>([]);
   // IndexedDB solo existe en el navegador: en SSR/prerender este servicio no la toca.
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private dbPromise: Promise<IDBDatabase> | null = null;
@@ -85,5 +89,6 @@ export class OfflineStorageService {
   private async refreshCount(): Promise<void> {
     const pending = await this.listPending();
     this.pendingCount.set(pending.length);
+    this.pending.set(pending.map(({ id, recordedAt }) => ({ id, recordedAt })));
   }
 }

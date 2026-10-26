@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { AppUser, ObserverRole, UserStats } from '../models';
 import { SUPABASE_SESSION_STORAGE_KEY, SupabaseClientService } from './supabase-client.service';
 import { AuthRedirectUrlService } from './auth-redirect-url.service';
+import { OfflineRecordingsLogService } from './offline-recordings-log.service';
 import { environment } from '../../../environments/environment';
 
 const DEFAULT_ROLE: ObserverRole = 'hobbyist';
@@ -15,6 +16,7 @@ export class UserService {
   private readonly supabase = inject(SupabaseClientService).client;
   private readonly http = inject(HttpClient);
   private readonly authRedirectUrls = inject(AuthRedirectUrlService);
+  private readonly offlineLog = inject(OfflineRecordingsLogService);
 
   readonly currentUser = signal<AppUser | null>(null);
 
@@ -85,6 +87,8 @@ export class UserService {
   async logout(): Promise<void> {
     const { error } = await this.supabase.auth.signOut();
     if (error) throw error;
+    // Borro el registro offline para que otra persona en este navegador no lo vea.
+    await this.offlineLog.clear();
   }
 
   async sendPasswordResetEmail(email: string): Promise<void> {
