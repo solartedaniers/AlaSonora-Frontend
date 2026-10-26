@@ -3,6 +3,10 @@
     "name": "AlaSonora",
     "tagline": "Bioacústica & IA"
   },
+  "brand": {
+    "symbolAlt": "Símbolo de AlaSonora: un ave verde con ondas de sonido",
+    "socialImageAlt": "Logo de AlaSonora: un ave verde con ondas de sonido y barras de espectro sobre fondo oscuro"
+  },
   "nav": {
     "dashboard": "Inicio",
     "record": "Grabar / Subir",

@@ -3,6 +3,10 @@
     "name": "AlaSonora",
     "tagline": "Bioacoustics & AI"
   },
+  "brand": {
+    "symbolAlt": "AlaSonora symbol: a green bird with sound waves",
+    "socialImageAlt": "AlaSonora logo: a green bird with sound waves and spectrum bars on a dark background"
+  },
   "nav": {
     "dashboard": "Home",
     "record": "Record / Upload",

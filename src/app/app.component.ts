@@ -8,6 +8,7 @@ import { CursorGlowService } from './core/services/cursor-glow.service';
 import { AppUpdateService } from './core/services/app-update.service';
 import { RouteMetaService } from './core/services/route-meta.service';
 import { CanonicalUrlService } from './core/services/canonical-url.service';
+import { SocialPreviewService } from './core/services/social-preview.service';
 import { UpdatePromptComponent } from './shared/components/update-prompt/update-prompt.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 
@@ -30,6 +31,7 @@ export class AppComponent {
     // En servidor y navegador: la descripción, el canonical y og:url de cada ruta deben salir en el HTML generado.
     inject(RouteMetaService);
     inject(CanonicalUrlService);
+    inject(SocialPreviewService);
     // IndexedDB, Service Worker y eventos de red solo existen en el navegador.
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
       inject(PendingRecordingsSyncService).start();

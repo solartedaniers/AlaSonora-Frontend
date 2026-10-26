@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { SonogramGlyphComponent } from '../sonogram-glyph/sonogram-glyph.component';
+import { BrandSymbolComponent } from '../brand-symbol/brand-symbol.component';
 import { I18nService } from '../../../core/services/i18n.service';
 import { MotionPreferenceService } from '../../../core/services/motion-preference.service';
 import { SpeciesImageComponent } from '../species-image/species-image.component';
@@ -41,7 +41,7 @@ const EMPTY_FRAME_COUNT = 5;
 @Component({
   selector: 'app-infinite-spiral',
   standalone: true,
-  imports: [SpeciesImageComponent, TranslatePipe, SonogramGlyphComponent],
+  imports: [SpeciesImageComponent, TranslatePipe, BrandSymbolComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './infinite-spiral.component.html',
   styleUrl: './infinite-spiral.component.scss',
