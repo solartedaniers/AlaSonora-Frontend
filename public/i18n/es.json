@@ -288,7 +288,9 @@
       "waking": "Motor de IA apagado · encendiendo…",
       "ready": "Motor de IA encendido",
       "unavailable": "Motor de IA apagado",
-      "timeout": "Motor de IA apagado. Inténtalo de nuevo en un momento."
+      "timeout": "Motor de IA apagado. Inténtalo de nuevo en un momento.",
+      "locked": "Podrás grabar y subir audios en cuanto el motor de IA esté encendido.",
+      "retry": "Encender de nuevo"
     },
     "fileUnsupported": "Ese tipo de archivo no es compatible. Usa WAV, FLAC o MP3.",
     "fileTooLarge": "El archivo supera el tamaño máximo de {max} MB.",

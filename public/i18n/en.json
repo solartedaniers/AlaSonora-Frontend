@@ -288,7 +288,9 @@
       "waking": "AI engine off · starting…",
       "ready": "AI engine on",
       "unavailable": "AI engine off",
-      "timeout": "The AI engine is off. Try again in a moment."
+      "timeout": "The AI engine is off. Try again in a moment.",
+      "locked": "You can record and upload audio as soon as the AI engine is on.",
+      "retry": "Start it again"
     },
     "fileUnsupported": "That file type isn't supported. Use WAV, FLAC or MP3.",
     "fileTooLarge": "The file exceeds the maximum size of {max} MB.",

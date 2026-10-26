@@ -17,6 +17,7 @@ import { FALLBACK_LOCATION, PendingRecordingsSyncService } from '../../core/serv
 import { GeoLocation } from '../../core/models';
 import { LoggerService } from '../../core/services/logger.service';
 import { AiEngineStatusService } from '../../core/services/ai-engine-status.service';
+import { ConnectivityService } from '../../core/services/connectivity.service';
 import {
   AUDIO_UPLOAD_ACCEPT,
   AUDIO_UPLOAD_MAX_MB,
@@ -88,6 +89,7 @@ export class RecordingComponent {
   private readonly pendingSync = inject(PendingRecordingsSyncService);
   private readonly router = inject(Router);
   readonly aiEngine = inject(AiEngineStatusService);
+  private readonly connectivity = inject(ConnectivityService);
 
   readonly activeTab = signal<RecordingTab>(
     inject(ActivatedRoute).snapshot.queryParamMap.get(TAB_QUERY_PARAM) === 'upload' ? 'upload' : 'live'
@@ -158,6 +160,8 @@ export class RecordingComponent {
   /** Barra de subida → verificación → análisis; si falla, guarda el error y ofrece reintentar. */
   readonly progress = new ClassificationProgress();
   readonly isClassifying = computed(() => this.progress.active() && !this.progress.error());
+  /** Solo grabo o subo con el motor encendido; sin conexión sí, porque el audio queda en cola para después. */
+  readonly canSubmit = computed(() => this.aiEngine.ready() || !this.connectivity.online());
   /** Errores antes de empezar (formato, tamaño, sin sesión); los de la clasificación van en la barra. */
   readonly classifyError = signal<string | null>(null);
   readonly uploadAccept = AUDIO_UPLOAD_ACCEPT;
@@ -175,6 +179,7 @@ export class RecordingComponent {
       const wavBlob = await this.capture.stop();
       await this.classifyAndNavigate({ audio: wavBlob, durationSeconds, peakFrequencyHz });
     } else {
+      if (!this.canSubmit()) return;
       try {
         // Una grabación nueva reemplaza al intento anterior que hubiera fallado.
         this.progress.reset();
@@ -194,7 +199,7 @@ export class RecordingComponent {
     event.preventDefault();
     this.isDragOver.set(false);
     const file = event.dataTransfer?.files?.[0];
-    if (file) await this.classifyFile(file);
+    if (file && this.canSubmit()) await this.classifyFile(file);
   }
 
   async onFileSelected(event: Event): Promise<void> {
