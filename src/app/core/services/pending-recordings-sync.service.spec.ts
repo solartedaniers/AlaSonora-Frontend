@@ -86,20 +86,27 @@ describe('PendingRecordingsSyncService drain', () => {
   let create: jasmine.Spy;
   let record: jasmine.Spy;
   let remove: jasmine.Spy;
+  let warn: jasmine.Spy;
+  let queue: PendingRecording[];
   let service: PendingRecordingsSyncService;
 
   beforeEach(() => {
     calls = [];
+    warn = jasmine.createSpy('warn');
+    queue = [recording];
     create = jasmine.createSpy('create').and.callFake(async () => {
       calls.push('create');
       return { id: 'detection-1', species };
     });
     record = jasmine.createSpy('record').and.callFake(async () => void calls.push('record'));
-    remove = jasmine.createSpy('remove').and.callFake(async () => void calls.push('remove'));
+    remove = jasmine.createSpy('remove').and.callFake(async (id: string) => {
+      calls.push('remove');
+      queue = queue.filter((r) => r.id !== id);
+    });
     TestBed.configureTestingModule({
       providers: [
         { provide: UserService, useValue: { getUserId: async () => 'user-1', currentUser: () => null } },
-        { provide: OfflineStorageService, useValue: { listPending: async () => [recording], remove } },
+        { provide: OfflineStorageService, useValue: { listPending: async () => queue, remove } },
         {
           provide: ClassificationService,
           useValue: {
@@ -108,7 +115,7 @@ describe('PendingRecordingsSyncService drain', () => {
           },
         },
         { provide: DetectionsService, useValue: { create } },
-        { provide: LoggerService, useValue: { warn: () => undefined } },
+        { provide: LoggerService, useValue: { warn } },
         { provide: OfflineRecordingsLogService, useValue: { record } },
       ],
     });
@@ -133,6 +140,17 @@ describe('PendingRecordingsSyncService drain', () => {
 
     expect(record.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ id: 'r1', outcome: 'failed' }));
     expect(remove).toHaveBeenCalledWith('r1');
+  });
+
+  it('still deletes the audio once, without a second detection, when the log cannot be saved', async () => {
+    record.and.rejectWith(new Error('IndexedDB unavailable'));
+
+    await service.syncNow();
+    await service.syncNow();
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(remove).toHaveBeenCalledOnceWith('r1');
+    expect(warn).toHaveBeenCalled();
   });
 
   it('leaves a network failure in the queue without noting anything', async () => {

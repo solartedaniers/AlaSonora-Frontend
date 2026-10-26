@@ -91,9 +91,17 @@ export class PendingRecordingsSyncService implements OnDestroy {
         this.logger.warn('PendingSync', 'queued recording rejected by the classifier, dropping it', error);
         entry = PendingRecordingsSyncService.logEntry(recording, 'failed');
       }
-      // Anoto el resultado antes de borrar el audio, así la fila nunca desaparece de la vista.
-      await this.offlineLog.record(entry);
+      await this.noteOutcome(entry);
       await this.offlineStorage.remove(recording.id);
+    }
+  }
+
+  // Anoto el resultado antes de borrar el audio; si el registro falla, igual borro para no reenviar ni duplicar.
+  private async noteOutcome(entry: OfflineRecordingLogEntry): Promise<void> {
+    try {
+      await this.offlineLog.record(entry);
+    } catch (error) {
+      this.logger.warn('PendingSync', 'could not note the offline recording outcome', error);
     }
   }
 
