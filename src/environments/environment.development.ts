@@ -20,6 +20,11 @@ export const environment = {
     backendWakeTimeoutMs: 240000,
     wakeTimeoutMs: 300000,
     readyFreshMs: 600000,
+    // Render no deja que el backend lo despierte (429): mientras sigue encendiendo, el navegador visita
+    // este /health público cada browserWakeIntervalMs y abandona cada visita a los browserWakeTimeoutMs.
+    healthUrl: 'http://localhost:8000/health',
+    browserWakeIntervalMs: 60000,
+    browserWakeTimeoutMs: 30000,
   },
   // Nombre de usuario: solo letras y números; los mismos límites que profile.username.* del backend.
   username: {
