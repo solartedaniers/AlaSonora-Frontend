@@ -62,7 +62,7 @@ describe('DetectionsService and the navigation cache', () => {
 
   it('keeps the saved data when deleting fails', async () => {
     const deleting = service.deleteMine('d1');
-    http.expectOne(`${environment.apiBaseUrl}/detections/d1`).flush(null, { status: 403, statusText: 'Forbidden' });
+    http.expectOne(`${environment.apiBaseUrl}/detections/d1`).flush(null, { status: 404, statusText: 'Not Found' });
     await expectAsync(deleting).toBeRejected();
 
     expect(cache.peek(NAVIGATION_CACHE_KEYS.myDetections)).toEqual(['saved']);
