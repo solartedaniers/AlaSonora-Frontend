@@ -372,6 +372,16 @@
     "viewList": "List",
     "statusAll": "All",
     "statusValidated": "Validated",
+    "delete": {
+      "action": "Delete recording",
+      "offlineHint": "You need a connection to delete a recording.",
+      "dialogTitle": "Are you sure you want to delete this recording?",
+      "dialogBody": "If it was public, it is also removed from the public map. This can't be undone.",
+      "confirm": "Delete",
+      "deleting": "Deleting…",
+      "success": "Recording deleted",
+      "error": "The recording could not be deleted. Check your connection and try again."
+    },
     "offline": {
       "title": "Offline recordings",
       "subtitle": "The recordings you made without a connection, saved on this device.",

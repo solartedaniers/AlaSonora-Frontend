@@ -372,6 +372,16 @@
     "viewList": "Lista",
     "statusAll": "Todas",
     "statusValidated": "Validadas",
+    "delete": {
+      "action": "Eliminar grabación",
+      "offlineHint": "Necesitas conexión para eliminar una grabación.",
+      "dialogTitle": "¿Seguro que quieres eliminar esta grabación?",
+      "dialogBody": "Si era pública, también se quita del mapa público. Esta acción no se puede deshacer.",
+      "confirm": "Eliminar",
+      "deleting": "Eliminando…",
+      "success": "Grabación eliminada",
+      "error": "No se pudo eliminar la grabación. Revisa tu conexión e inténtalo de nuevo."
+    },
     "offline": {
       "title": "Grabaciones offline",
       "subtitle": "Las grabaciones que hiciste sin conexión, guardadas en este dispositivo.",

@@ -51,6 +51,20 @@ export class OfflineRecordingsLogService {
     }
   }
 
+  /** Al borrar una detección quito su fila para no dejar un enlace a algo que ya no existe. Nunca lanza. */
+  async forgetDetection(detectionId: string): Promise<void> {
+    try {
+      const kept = (await this.readAll()).filter((e) => e.detectionId !== detectionId);
+      await this.write((store) => {
+        store.clear();
+        kept.forEach((e) => store.put(e));
+      });
+      this.entries.set(this.prune(kept));
+    } catch (error) {
+      this.logger.warn('OfflineLog', 'could not remove the deleted detection from the log', error);
+    }
+  }
+
   async clear(): Promise<void> {
     this.entries.set([]);
     if (!this.isBrowser) return;

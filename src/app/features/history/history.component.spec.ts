@@ -88,6 +88,18 @@ describe('HistoryComponent when coming back', () => {
     expect(fixture.componentInstance.all().map((d) => d.id)).toEqual(['saved', 'new']);
   });
 
+  it('takes a deleted recording out of the list without reloading', async () => {
+    const fixture = TestBed.createComponent(HistoryComponent);
+    fixture.detectChanges();
+    resolveFresh([detection('keep'), detection('gone')]);
+    await fixture.whenStable();
+
+    fixture.componentInstance.removeDetection('gone');
+
+    expect(fixture.componentInstance.all().map((d) => d.id)).toEqual(['keep']);
+    expect(fixture.componentInstance.stats().recordings).toBe(1);
+  });
+
   it('shows the loading state only the first time, when nothing is saved', () => {
     const fixture = TestBed.createComponent(HistoryComponent);
     fixture.detectChanges();

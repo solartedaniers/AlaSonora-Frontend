@@ -49,4 +49,22 @@ describe('DetectionsService and the navigation cache', () => {
 
     expect(cache.peek(NAVIGATION_CACHE_KEYS.myDetections)).toEqual(['saved']);
   });
+
+  it('deletes my own detection and forgets the saved history, stats and feeds', async () => {
+    const deleting = service.deleteMine('d1');
+    const request = http.expectOne(`${environment.apiBaseUrl}/detections/d1`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    await deleting;
+
+    for (const key of Object.values(NAVIGATION_CACHE_KEYS)) expect(cache.peek(key)).withContext(key).toBeUndefined();
+  });
+
+  it('keeps the saved data when deleting fails', async () => {
+    const deleting = service.deleteMine('d1');
+    http.expectOne(`${environment.apiBaseUrl}/detections/d1`).flush(null, { status: 403, statusText: 'Forbidden' });
+    await expectAsync(deleting).toBeRejected();
+
+    expect(cache.peek(NAVIGATION_CACHE_KEYS.myDetections)).toEqual(['saved']);
+  });
 });
