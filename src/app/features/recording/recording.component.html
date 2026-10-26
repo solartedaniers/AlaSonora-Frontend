@@ -193,7 +193,7 @@
                 <span class="field-label">{{ 'recording.highPassFilter' | translate }}</span>
                 <span class="text-sm text-on-surface-variant">{{ 'recording.highPassFilterHelp' | translate }}</span>
               </span>
-              <input
+              <input name="highPassFilter"
                 type="checkbox"
                 role="switch"
                 class="record-switch"
@@ -242,7 +242,7 @@
           <button type="button" class="btn btn--ink" [disabled]="isClassifying() || !canSubmit()" [attr.aria-describedby]="canSubmit() ? null : 'engine-locked'">
             {{ 'recording.browseFiles' | translate }}
           </button>
-          <input #fileInput type="file" [accept]="uploadAccept" class="sr-only" tabindex="-1" (change)="onFileSelected($event)" />
+          <input name="audioFile" #fileInput type="file" [accept]="uploadAccept" class="sr-only" tabindex="-1" (change)="onFileSelected($event)" />
         </div>
       </section>
     }

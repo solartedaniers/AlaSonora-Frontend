@@ -67,7 +67,7 @@
           <label class="btn btn--quiet cursor-pointer">
             <span class="material-symbols-outlined" aria-hidden="true">add_a_photo</span>
             {{ (uploadingAvatar() ? 'common.uploading' : 'profile.changeAvatar') | translate }}
-            <input type="file" accept="image/*" class="sr-only" (change)="onAvatarSelected($event)" />
+            <input name="avatarPhoto" type="file" accept="image/*" class="sr-only" (change)="onAvatarSelected($event)" />
           </label>
           @if (avatarError()) {
             <p class="field-error" role="alert">{{ avatarError() }}</p>
