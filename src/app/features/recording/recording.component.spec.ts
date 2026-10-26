@@ -115,6 +115,17 @@ describe('RecordingComponent with the AI engine off', () => {
     expect(component['resolveClassifyErrorMessage'](busy)).toBe('t:recording.engine.busy');
   });
 
+  it('shows the i18n text for each engine rejection code and keeps the legacy detail', () => {
+    const component = TestBed.createComponent(RecordingComponent).componentInstance;
+    const rejected = (error: object) =>
+      component['resolveClassifyErrorMessage'](new HttpErrorResponse({ status: 422, error }));
+
+    expect(rejected({ errorCode: 'AUDIO_TOO_NOISY' })).toBe('t:recording.tooNoisy');
+    expect(rejected({ errorCode: 'NO_BIRD_SIGNAL' })).toBe('t:recording.noBirdSignal');
+    expect(rejected({ errorCode: 'AUDIO_REJECTED' })).toBe('t:recording.audioRejected');
+    expect(rejected({ message: 'Texto de un backend anterior' })).toBe('Texto de un backend anterior');
+  });
+
   it('explains that the audio worker is unavailable instead of blaming the microphone', async () => {
     status.set('ready');
     const capture = TestBed.inject(AudioCaptureService) as unknown as { start: () => Promise<void> };

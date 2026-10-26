@@ -54,6 +54,12 @@ const ENGINE_ASLEEP_STATUSES = [502, 503, 504];
 // Audio rechazado por el backend (formato o tamaño): mismos textos que la validación local.
 const AUDIO_TOO_LARGE_CODE = 'AUDIO_TOO_LARGE';
 const AUDIO_UNSUPPORTED_CODE = 'AUDIO_UNSUPPORTED';
+// Rechazos de calidad del motor: cada código del backend tiene su texto en el i18n.
+const AUDIO_QUALITY_MESSAGES: Record<string, string> = {
+  AUDIO_TOO_NOISY: 'recording.tooNoisy',
+  NO_BIRD_SIGNAL: 'recording.noBirdSignal',
+  AUDIO_REJECTED: 'recording.audioRejected',
+};
 // ?tab=upload abre directo la pestaña de subir archivo (enlace del Dashboard).
 const TAB_QUERY_PARAM = 'tab';
 
@@ -381,15 +387,14 @@ export class RecordingComponent {
     if (code === AUDIO_TOO_LARGE_CODE) return this.uploadProblemMessage('tooLarge');
     if (code === AUDIO_UNSUPPORTED_CODE) return this.uploadProblemMessage('unsupported');
     if (code === AI_ENGINE_BUSY_CODE) return this.i18n.translate('recording.engine.busy');
+    if (code && AUDIO_QUALITY_MESSAGES[code]) return this.i18n.translate(AUDIO_QUALITY_MESSAGES[code]);
     if (error instanceof HttpErrorResponse && error.status === 422) {
       const body = error.error as { message?: string; errorCode?: string } | null;
       const detail = body?.message;
       if (body?.errorCode === NO_SPECIES_IDENTIFIED_CODE || detail === NO_SPECIES_IDENTIFIED_LEGACY_DETAIL) {
         return this.i18n.translate('recording.noSpeciesIdentified');
       }
-      // Cualquier otro 422 (audio rechazado por AudioQualityAnalyzer) ya
-      // trae un mensaje final en español desde el ai-engine — se muestra
-      // tal cual en vez de reemplazarlo por un texto genérico de conexión.
+      // Un backend anterior sin código todavía manda el texto del motor: lo muestro tal cual.
       if (detail) return detail;
     }
     return this.i18n.translate('recording.classifyError');
