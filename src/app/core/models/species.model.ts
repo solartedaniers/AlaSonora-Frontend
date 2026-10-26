@@ -17,7 +17,10 @@ export interface Species {
  * Nombre común en el idioma activo; si falta, el nombre científico. Nunca el del otro idioma:
  * así la interfaz en español no muestra nombres en inglés.
  */
-export function speciesDisplayName(species: Species, lang: 'es' | 'en'): string {
+export function speciesDisplayName(
+  species: Pick<Species, 'commonName' | 'commonNameEn' | 'scientificName'>,
+  lang: 'es' | 'en',
+): string {
   const localized = lang === 'en' ? species.commonNameEn : species.commonName;
   return localized?.trim() || species.scientificName;
 }

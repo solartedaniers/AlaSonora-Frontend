@@ -44,6 +44,11 @@ export const environment = {
     estimateTauMs: 15000,
     tickMs: 200,
   },
+  // Registro liviano de las grabaciones offline ya enviadas (sin audio): cuántas guardo y por cuántos días.
+  offlineRecordingsLog: {
+    maxEntries: 20,
+    maxAgeDays: 30,
+  },
   // Duración de los avisos breves (p. ej. "Confirma en tu correo" al registrarse).
   toastMs: 3000,
   demoAccount,

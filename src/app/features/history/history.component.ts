@@ -12,6 +12,8 @@ import { DetectionsService } from '../../core/services/detections.service';
 import { Detection, SyncStatus } from '../../core/models';
 import { LoggerService } from '../../core/services/logger.service';
 import { SpeciesImageComponent } from '../../shared/components/species-image/species-image.component';
+import { OfflineStorageService } from '../../core/services/offline-storage.service';
+import { OfflineRecordingsComponent } from './offline-recordings/offline-recordings.component';
 
 type HistoryView = 'gallery' | 'list';
 type StatusFilter = 'all' | SyncStatus;
@@ -20,7 +22,7 @@ type HistoryLoadState = 'loading' | 'ready' | 'error';
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [SpeciesImageComponent, CountUpComponent, LoadingStateComponent, 
+  imports: [SpeciesImageComponent, CountUpComponent, LoadingStateComponent, OfflineRecordingsComponent,
     RouterLink,
     DatePipe,
     NavHeaderComponent,
@@ -36,6 +38,7 @@ type HistoryLoadState = 'loading' | 'ready' | 'error';
 export class HistoryComponent implements OnInit {
   private readonly detectionsService = inject(DetectionsService);
   private readonly logger = inject(LoggerService);
+  private readonly offlineQueue = inject(OfflineStorageService);
 
   readonly all = signal<Detection[]>([]);
   readonly view = signal<HistoryView>('gallery');
@@ -51,7 +54,6 @@ export class HistoryComponent implements OnInit {
   readonly statusFilters: { id: StatusFilter; labelKey: string }[] = [
     { id: 'all', labelKey: 'history.statusAll' },
     { id: 'synced', labelKey: 'history.statusValidated' },
-    { id: 'pending-sync', labelKey: 'history.statusPending' },
   ];
 
   readonly stats = computed(() => {
@@ -59,7 +61,8 @@ export class HistoryComponent implements OnInit {
     return {
       recordings: all.length,
       validated: all.filter((d) => d.syncStatus === 'synced').length,
-      pending: all.filter((d) => d.syncStatus === 'pending-sync').length,
+      // Las pendientes viven en el dispositivo: el backend solo devuelve detecciones ya guardadas.
+      pending: this.offlineQueue.pendingCount(),
       species: new Set(all.map((d) => d.species.scientificName)).size,
     };
   });

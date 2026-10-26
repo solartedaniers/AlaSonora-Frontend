@@ -1,8 +1,10 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ClassificationService } from './classification.service';
 import { DetectionsService } from './detections.service';
 import { LoggerService } from './logger.service';
-import { OfflineStorageService } from './offline-storage.service';
+import { OfflineStorageService, PendingRecording } from './offline-storage.service';
+import { OfflineRecordingsLogService } from './offline-recordings-log.service';
 import { PendingRecordingsSyncService } from './pending-recordings-sync.service';
 import { UserService } from './user.service';
 
@@ -20,6 +22,7 @@ describe('PendingRecordingsSyncService listeners and locking', () => {
         { provide: ClassificationService, useValue: {} },
         { provide: DetectionsService, useValue: {} },
         { provide: LoggerService, useValue: {} },
+        { provide: OfflineRecordingsLogService, useValue: {} },
       ],
     });
     service = TestBed.inject(PendingRecordingsSyncService);
@@ -67,5 +70,95 @@ describe('PendingRecordingsSyncService listeners and locking', () => {
 
     expect(getUserId).toHaveBeenCalledTimes(3);
     expect(maxRunning).toBe(1);
+  });
+});
+
+describe('PendingRecordingsSyncService drain', () => {
+  const recording: PendingRecording = {
+    id: 'r1',
+    recordedAt: '2026-10-20T10:00:00.000Z',
+    audioBlob: new Blob(['wav']),
+    durationSeconds: 5,
+    peakFrequencyHz: 3000,
+  };
+  const species = { id: 's1', commonName: 'Copetón', commonNameEn: 'Rufous-collared Sparrow', scientificName: 'Zonotrichia capensis' };
+  let calls: string[];
+  let create: jasmine.Spy;
+  let record: jasmine.Spy;
+  let remove: jasmine.Spy;
+  let warn: jasmine.Spy;
+  let queue: PendingRecording[];
+  let service: PendingRecordingsSyncService;
+
+  beforeEach(() => {
+    calls = [];
+    warn = jasmine.createSpy('warn');
+    queue = [recording];
+    create = jasmine.createSpy('create').and.callFake(async () => {
+      calls.push('create');
+      return { id: 'detection-1', species };
+    });
+    record = jasmine.createSpy('record').and.callFake(async () => void calls.push('record'));
+    remove = jasmine.createSpy('remove').and.callFake(async (id: string) => {
+      calls.push('remove');
+      queue = queue.filter((r) => r.id !== id);
+    });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: UserService, useValue: { getUserId: async () => 'user-1', currentUser: () => null } },
+        { provide: OfflineStorageService, useValue: { listPending: async () => queue, remove } },
+        {
+          provide: ClassificationService,
+          useValue: {
+            uploadRecording: async () => ({ storagePath: 'user-1/r1.wav', signedUrl: 'https://signed' }),
+            classify: async () => ({ species, confidence: 90, alternatives: [] }),
+          },
+        },
+        { provide: DetectionsService, useValue: { create } },
+        { provide: LoggerService, useValue: { warn } },
+        { provide: OfflineRecordingsLogService, useValue: { record } },
+      ],
+    });
+    service = TestBed.inject(PendingRecordingsSyncService);
+  });
+
+  it('keeps the order: create the detection, note it, then delete the audio', async () => {
+    await service.syncNow();
+
+    expect(calls).toEqual(['create', 'record', 'remove']);
+    expect(remove).toHaveBeenCalledWith('r1');
+    const [entry] = record.calls.mostRecent().args;
+    expect(entry).toEqual(jasmine.objectContaining({ id: 'r1', outcome: 'synced', detectionId: 'detection-1' }));
+    expect(entry.species).toEqual({ commonName: 'Copetón', commonNameEn: 'Rufous-collared Sparrow', scientificName: 'Zonotrichia capensis' });
+    expect(Object.keys(entry)).not.toContain('audioBlob');
+  });
+
+  it('notes a 422 as failed and still drops it from the queue as before', async () => {
+    create.and.rejectWith(new HttpErrorResponse({ status: 422 }));
+
+    await service.syncNow();
+
+    expect(record.calls.mostRecent().args[0]).toEqual(jasmine.objectContaining({ id: 'r1', outcome: 'failed' }));
+    expect(remove).toHaveBeenCalledWith('r1');
+  });
+
+  it('still deletes the audio once, without a second detection, when the log cannot be saved', async () => {
+    record.and.rejectWith(new Error('IndexedDB unavailable'));
+
+    await service.syncNow();
+    await service.syncNow();
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(remove).toHaveBeenCalledOnceWith('r1');
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('leaves a network failure in the queue without noting anything', async () => {
+    create.and.rejectWith(new HttpErrorResponse({ status: 0 }));
+
+    await service.syncNow();
+
+    expect(record).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
   });
 });

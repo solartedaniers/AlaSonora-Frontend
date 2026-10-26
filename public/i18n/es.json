@@ -372,7 +372,19 @@
     "viewList": "Lista",
     "statusAll": "Todas",
     "statusValidated": "Validadas",
-    "statusPending": "Pendientes Offline",
+    "offline": {
+      "title": "Grabaciones offline",
+      "subtitle": "Las grabaciones que hiciste sin conexión, guardadas en este dispositivo.",
+      "status": {
+        "pending": "Pendiente de subir",
+        "synced": "Sincronizada",
+        "failed": "No se pudo identificar"
+      },
+      "failedHint": "El motor de IA rechazó este audio, así que no se guardó como detección.",
+      "openDetection": "Ver detección",
+      "retry": "Reintentar ahora",
+      "retrying": "Sincronizando…"
+    },
     "emptyTitle": "Aún no hay grabaciones",
     "emptyBody": "Graba o sube tu primer audio para empezar tu cuaderno de campo.",
     "stats": {
