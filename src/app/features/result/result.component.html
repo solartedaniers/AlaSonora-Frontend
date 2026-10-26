@@ -57,7 +57,7 @@
             <label class="btn btn--quiet w-full cursor-pointer">
               <span class="material-symbols-outlined text-xl" aria-hidden="true">add_a_photo</span>
               {{ (uploadingPhoto() ? 'common.uploading' : 'result.uploadObserverPhoto') | translate }}
-              <input type="file" accept="image/*" class="sr-only" [disabled]="uploadingPhoto()" (change)="onObserverPhotoSelected($event)" />
+              <input name="observerPhoto" type="file" accept="image/*" class="sr-only" [disabled]="uploadingPhoto()" (change)="onObserverPhotoSelected($event)" />
             </label>
             @if (photoUploadError()) {
               <p class="field-error" role="alert">{{ photoUploadError()! | translate }}</p>

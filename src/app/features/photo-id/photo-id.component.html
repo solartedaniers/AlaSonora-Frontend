@@ -11,7 +11,7 @@
       <label class="flex flex-col items-center justify-center gap-3 h-64 rounded-2xl border-2 border-dashed border-outline-variant bg-surface-container-low cursor-pointer hover:bg-surface-container-high transition-colors">
         <span class="material-symbols-outlined text-5xl text-primary">add_a_photo</span>
         <span class="font-display font-semibold">{{ 'photoId.uploadPrompt' | translate }}</span>
-        <input type="file" accept="image/*" capture="environment" class="hidden" (change)="onPhotoSelected($event)" />
+        <input name="birdPhoto" type="file" accept="image/*" capture="environment" class="hidden" (change)="onPhotoSelected($event)" />
       </label>
     } @else {
       <div class="bg-surface-container-low rounded-2xl p-6 shadow-lg grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
