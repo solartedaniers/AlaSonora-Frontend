@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { CreateDetectionRequest, Detection } from '../models';
 import { SupabaseClientService } from './supabase-client.service';
 import { storageObjectName } from './storage-object-name';
+import { DETECTION_CACHE_KEYS, NavigationCacheService } from './navigation-cache.service';
 
 /** Detección tal como la devuelve el backend, sin el estado de sincronización offline. */
 type DetectionApiResponse = Omit<Detection, 'syncStatus'>;
@@ -16,6 +17,7 @@ const OBSERVER_PHOTOS_BUCKET = 'observer-photos';
 export class DetectionsService {
   private readonly http = inject(HttpClient);
   private readonly supabase = inject(SupabaseClientService).client;
+  private readonly cache = inject(NavigationCacheService);
   private readonly baseUrl = `${environment.apiBaseUrl}/detections`;
 
   /** fresh salta la caché de transferencia del SSR: sin esto, una detección guardada después de cargar no aparecería. */
@@ -37,6 +39,8 @@ export class DetectionsService {
     const created = await firstValueFrom(
       this.http.post<DetectionApiResponse>(this.baseUrl, request)
     );
+    // Sirve igual para el guardado en línea y para la sincronización offline: ambos pasan por aquí.
+    this.cache.invalidate(DETECTION_CACHE_KEYS);
     return this.withSyncStatus(created);
   }
 
@@ -61,8 +65,11 @@ export class DetectionsService {
 
   /** Todo mi historial, de la más reciente a la más antigua (una sola petición a /mine). */
   async getMineNewestFirst(): Promise<Detection[]> {
-    const mine = await this.getMine();
-    return [...mine].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime());
+    return DetectionsService.newestFirst(await this.getMine());
+  }
+
+  static newestFirst(detections: Detection[]): Detection[] {
+    return [...detections].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime());
   }
 
   /** Historial de cualquier usuario, solo para el panel de administración (GET /api/admin/users/{id}/detections). */
@@ -87,12 +94,14 @@ export class DetectionsService {
         observerPhotoStoragePath: path,
       })
     );
+    this.cache.invalidate(DETECTION_CACHE_KEYS);
     return this.withSyncStatus(updated);
   }
 
   /** Borra cualquier detección (pública o privada), solo para el panel de administración. */
   async deleteAsAdmin(id: string): Promise<void> {
     await firstValueFrom(this.http.delete<void>(`${environment.apiBaseUrl}/admin/detections/${id}`));
+    this.cache.invalidate(DETECTION_CACHE_KEYS);
   }
 
   // Toda detección que viene del backend ya está persistida, así que su
