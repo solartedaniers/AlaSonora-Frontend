@@ -9,6 +9,7 @@ import { AppUpdateService } from './core/services/app-update.service';
 import { RouteMetaService } from './core/services/route-meta.service';
 import { CanonicalUrlService } from './core/services/canonical-url.service';
 import { SocialPreviewService } from './core/services/social-preview.service';
+import { AiEngineStatusService } from './core/services/ai-engine-status.service';
 import { UpdatePromptComponent } from './shared/components/update-prompt/update-prompt.component';
 import { ToastComponent } from './shared/components/toast/toast.component';
 
@@ -37,6 +38,8 @@ export class AppComponent {
       inject(PendingRecordingsSyncService).start();
       inject(CursorGlowService).start();
       inject(AppUpdateService).start();
+      // Desde el arranque, para despertar el motor también cuando se restaura una sesión guardada.
+      inject(AiEngineStatusService);
     }
   }
 }

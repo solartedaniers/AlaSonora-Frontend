@@ -1,4 +1,4 @@
-import { CUSTOM_ELEMENTS_SCHEMA, computed, signal } from '@angular/core';
+import { ApplicationRef, CUSTOM_ELEMENTS_SCHEMA, computed, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -17,15 +17,17 @@ import { RecordingComponent } from './recording.component';
 describe('RecordingComponent with the AI engine off', () => {
   const status = signal<AiEngineStatus>('waking');
   const online = signal(true);
+  let warmUp: jasmine.Spy;
 
   beforeEach(() => {
+    warmUp = jasmine.createSpy('warmUp');
     status.set('waking');
     online.set(true);
     TestBed.configureTestingModule({
       imports: [RecordingComponent],
       providers: [
         provideRouter([]),
-        { provide: AiEngineStatusService, useValue: { status, ready: computed(() => status() === 'ready'), warmUp: () => undefined } },
+        { provide: AiEngineStatusService, useValue: { status, ready: computed(() => status() === 'ready'), warmUp } },
         { provide: ConnectivityService, useValue: { online } },
         {
           provide: AudioCaptureService,
@@ -62,6 +64,7 @@ describe('RecordingComponent with the AI engine off', () => {
       recordButton: () => element.querySelector<HTMLButtonElement>('.record-button')!,
       browseButton: () => element.querySelector<HTMLButtonElement>('.record-dropzone button')!,
       lockedMessage: () => element.querySelector('#engine-locked'),
+      retryButton: () => element.querySelector<HTMLButtonElement>('.btn--quiet'),
     };
   };
 
@@ -89,5 +92,16 @@ describe('RecordingComponent with the AI engine off', () => {
     online.set(false);
     const view = render('live');
     expect(view.recordButton().disabled).toBeFalse();
+  });
+
+  it('wakes the engine on entering and from the "turn on again" button', async () => {
+    const view = render('live');
+    await TestBed.inject(ApplicationRef).whenStable();
+    expect(warmUp).toHaveBeenCalledTimes(1);
+
+    status.set('unavailable');
+    view.refresh();
+    view.retryButton()!.click();
+    expect(warmUp).toHaveBeenCalledTimes(2);
   });
 });

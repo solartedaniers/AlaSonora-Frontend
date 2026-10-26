@@ -4,6 +4,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SupabaseClientService } from './supabase-client.service';
+import { AiEngineBrowserWakeUpService } from './ai-engine-browser-wake-up.service';
 
 export type AiEngineStatus = 'unknown' | 'waking' | 'ready' | 'unavailable';
 
@@ -18,12 +19,14 @@ const UNAUTHORIZED = 401;
 
 /**
  * Estado del motor de IA, que en Render se duerme por inactividad. Pregunto al backend
- * (GET /api/ai/status), nunca al motor directo; el backend lo despierta en segundo plano.
- * Solo consulto mientras no está listo: al encender, al cerrar sesión o con un 401 dejo de preguntar.
+ * (GET /api/ai/status); el backend lo despierta en segundo plano, pero Render le responde 429, así que
+ * mientras sigue encendiendo también lo despierta el navegador. Solo consulto mientras no está listo:
+ * al encender, al cerrar sesión, con un 401 o al agotarse el plazo dejo de preguntar y de despertarlo.
  */
 @Injectable({ providedIn: 'root' })
 export class AiEngineStatusService {
   private readonly http = inject(HttpClient);
+  private readonly browserWakeUp = inject(AiEngineBrowserWakeUpService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly config = environment.aiEngine;
 
@@ -37,8 +40,10 @@ export class AiEngineStatusService {
 
   constructor() {
     if (!this.isBrowser) return;
-    inject(SupabaseClientService).client.auth.onAuthStateChange((event) => {
+    inject(SupabaseClientService).client.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') this.stop();
+      // Sesión restaurada al abrir la app: lo despierto como al iniciar sesión.
+      else if (event === 'INITIAL_SESSION' && session) this.warmUp();
     });
   }
 
@@ -79,8 +84,15 @@ export class AiEngineStatusService {
     // El backend también puede estar dormido: su plazo corre primero y el del motor desde su primera respuesta.
     let deadline = Date.now() + this.config.backendWakeTimeoutMs;
     let backendAwake = false;
+    // Si lo creía encendido, antes de despertarlo desde el navegador confirmo con el backend que se durmió.
+    let wakeFromBrowser = this.status() !== 'ready';
+    let nextBrowserWakeAt = 0;
     this.status.set('waking');
     while (Date.now() < deadline) {
+      if (wakeFromBrowser && Date.now() >= nextBrowserWakeAt) {
+        this.browserWakeUp.wake();
+        nextBrowserWakeAt = Date.now() + this.config.browserWakeIntervalMs;
+      }
       const check = await this.check();
       if (session !== this.session) return false;
       if (check === 'signedOut') {
@@ -92,6 +104,7 @@ export class AiEngineStatusService {
         this.status.set('ready');
         return true;
       }
+      wakeFromBrowser = true;
       if (check === 'notReady' && !backendAwake) {
         backendAwake = true;
         deadline = Date.now() + this.config.wakeTimeoutMs;
