@@ -26,13 +26,19 @@
       </div>
     </header>
 
-    <!-- Estado del motor de IA: discreto, solo informa; la grabación nunca se bloquea por él. -->
-    <div aria-live="polite">
+    <!-- Estado del motor de IA: mientras no enciende, grabar y subir quedan deshabilitados. -->
+    <div aria-live="polite" class="flex flex-col items-start gap-2">
       @if (aiEngine.status() !== 'unknown') {
         <p class="ai-status" [attr.data-state]="aiEngine.status()">
           <span class="material-symbols-outlined ai-status__icon" aria-hidden="true">{{ aiStatusIcon[aiEngine.status()] }}</span>
           {{ ('recording.engine.' + aiEngine.status()) | translate }}
         </p>
+      }
+      @if (!canSubmit()) {
+        <p id="engine-locked" class="text-sm text-on-surface-variant">{{ 'recording.engine.locked' | translate }}</p>
+      }
+      @if (aiEngine.status() === 'unavailable') {
+        <button type="button" class="btn btn--quiet" (click)="aiEngine.warmUp()">{{ 'recording.engine.retry' | translate }}</button>
       }
     </div>
 
@@ -141,7 +147,8 @@
             <button
               type="button"
               class="record-button"
-              [disabled]="isClassifying() || !recordingSupported()"
+              [disabled]="isClassifying() || !recordingSupported() || (!capture.isRecording() && !canSubmit())"
+              [attr.aria-describedby]="canSubmit() ? null : 'engine-locked'"
               [attr.aria-pressed]="capture.isRecording()"
               (click)="toggleRecording()"
             >
@@ -220,11 +227,11 @@
         <div
           class="record-dropzone"
           [class.is-dragover]="isDragOver()"
-          [class.is-busy]="isClassifying()"
+          [class.is-busy]="isClassifying() || !canSubmit()"
           (dragover)="$event.preventDefault(); isDragOver.set(true)"
           (dragleave)="isDragOver.set(false)"
           (drop)="onFileDropped($event)"
-          (click)="!isClassifying() && fileInput.click()"
+          (click)="!isClassifying() && canSubmit() && fileInput.click()"
         >
           <app-song-sonogram class="record-dropzone__sonogram" [band]="false" />
           <span class="material-symbols-outlined text-6xl text-primary" aria-hidden="true">upload_file</span>
@@ -232,7 +239,7 @@
             <h2 class="text-3xl font-extrabold tracking-display">{{ 'recording.dropzoneTitle' | translate }}</h2>
             <p class="text-on-surface-variant">{{ 'recording.dropzoneBody' | translate: { max: uploadMaxMb } }}</p>
           </div>
-          <button type="button" class="btn btn--ink" [disabled]="isClassifying()">
+          <button type="button" class="btn btn--ink" [disabled]="isClassifying() || !canSubmit()" [attr.aria-describedby]="canSubmit() ? null : 'engine-locked'">
             {{ 'recording.browseFiles' | translate }}
           </button>
           <input #fileInput type="file" [accept]="uploadAccept" class="sr-only" tabindex="-1" (change)="onFileSelected($event)" />

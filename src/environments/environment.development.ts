@@ -12,12 +12,13 @@ export const environment = {
   photoIdentificationEnabled: false,
   // Ilustración de la app cuando una especie no tiene foto o su foto no carga.
   speciesImageFallback: 'images/sketch.webp',
-  // Motor de IA dormido (Render gratis): cada cuánto pregunto si despertó, cuánto espero como
-  // máximo y por cuánto tiempo confío en un "listo" antes de volver a calentarlo. El arranque en
-  // frío de Render (servicio + carga del modelo) puede pasar de un minuto: espero hasta 3.
+  // Motor de IA dormido (Render gratis): cada cuánto pregunto si despertó, cuánto espero a que responda
+  // el backend (también puede estar dormido, ~2 min), cuánto espero al motor desde esa respuesta y por
+  // cuánto tiempo confío en un "listo" antes de volver a preguntar.
   aiEngine: {
     statusPollMs: 3000,
-    wakeTimeoutMs: 180000,
+    backendWakeTimeoutMs: 240000,
+    wakeTimeoutMs: 300000,
     readyFreshMs: 600000,
   },
   // Nombre de usuario: solo letras y números; los mismos límites que profile.username.* del backend.
