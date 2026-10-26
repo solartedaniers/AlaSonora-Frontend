@@ -293,6 +293,7 @@
       "ready": "AI engine on",
       "unavailable": "AI engine off",
       "timeout": "The AI engine is off. Try again in a moment.",
+      "busy": "The AI engine is handling many requests. Try again in a moment.",
       "locked": "You can record and upload audio as soon as the AI engine is on.",
       "retry": "Start it again"
     },

@@ -32,8 +32,8 @@
   ],
   "dataGroups": [
     {
-      "name": "api-freshness",
-      "urls": ["/api/**"],
+      "name": "public-api-freshness",
+      "urls": ["/api/detections?visibility=public", "/api/network-stats"],
       "cacheConfig": {
         "strategy": "freshness",
         "maxSize": 100,

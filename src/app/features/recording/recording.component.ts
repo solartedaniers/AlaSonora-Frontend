@@ -48,6 +48,8 @@ const NO_SPECIES_IDENTIFIED_CODE = 'NO_SPECIES_IDENTIFIED';
 const NO_SPECIES_IDENTIFIED_LEGACY_DETAIL = 'No bird species were identified in this recording';
 // Motor dormido: código estable del backend o las respuestas del proxy de Render mientras arranca.
 const AI_ENGINE_UNAVAILABLE_CODE = 'AI_ENGINE_UNAVAILABLE';
+// Pool de IA lleno en el backend (503): el motor está encendido, así que no lo trato como dormido.
+const AI_ENGINE_BUSY_CODE = 'AI_ENGINE_BUSY';
 const ENGINE_ASLEEP_STATUSES = [502, 503, 504];
 // Audio rechazado por el backend (formato o tamaño): mismos textos que la validación local.
 const AUDIO_TOO_LARGE_CODE = 'AUDIO_TOO_LARGE';
@@ -338,6 +340,7 @@ export class RecordingComponent {
   private static isEngineAsleep(error: unknown): boolean {
     if (!(error instanceof HttpErrorResponse)) return false;
     const code = (error.error as { errorCode?: string } | null)?.errorCode;
+    if (code === AI_ENGINE_BUSY_CODE) return false;
     return code === AI_ENGINE_UNAVAILABLE_CODE || ENGINE_ASLEEP_STATUSES.includes(error.status);
   }
 
@@ -366,6 +369,7 @@ export class RecordingComponent {
     const code = error instanceof HttpErrorResponse ? (error.error as { errorCode?: string } | null)?.errorCode : undefined;
     if (code === AUDIO_TOO_LARGE_CODE) return this.uploadProblemMessage('tooLarge');
     if (code === AUDIO_UNSUPPORTED_CODE) return this.uploadProblemMessage('unsupported');
+    if (code === AI_ENGINE_BUSY_CODE) return this.i18n.translate('recording.engine.busy');
     if (error instanceof HttpErrorResponse && error.status === 422) {
       const body = error.error as { message?: string; errorCode?: string } | null;
       const detail = body?.message;

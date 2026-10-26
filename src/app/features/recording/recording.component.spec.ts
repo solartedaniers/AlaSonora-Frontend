@@ -1,5 +1,6 @@
 import { ApplicationRef, CUSTOM_ELEMENTS_SCHEMA, computed, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AiEngineStatus, AiEngineStatusService } from '../../core/services/ai-engine-status.service';
@@ -103,5 +104,14 @@ describe('RecordingComponent with the AI engine off', () => {
     view.refresh();
     view.retryButton()!.click();
     expect(warmUp).toHaveBeenCalledTimes(2);
+  });
+
+  it('tells the user the engine is busy instead of treating it as asleep', () => {
+    const component = TestBed.createComponent(RecordingComponent).componentInstance;
+    const busy = new HttpErrorResponse({ status: 503, error: { errorCode: 'AI_ENGINE_BUSY' } });
+
+    expect(RecordingComponent['isEngineAsleep'](busy)).toBeFalse();
+    expect(RecordingComponent['isEngineAsleep'](new HttpErrorResponse({ status: 503 }))).toBeTrue();
+    expect(component['resolveClassifyErrorMessage'](busy)).toBe('t:recording.engine.busy');
   });
 });

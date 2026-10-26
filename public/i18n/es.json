@@ -293,6 +293,7 @@
       "ready": "Motor de IA encendido",
       "unavailable": "Motor de IA apagado",
       "timeout": "Motor de IA apagado. Inténtalo de nuevo en un momento.",
+      "busy": "El motor de IA está atendiendo muchas solicitudes. Inténtalo de nuevo en un momento.",
       "locked": "Podrás grabar y subir audios en cuanto el motor de IA esté encendido.",
       "retry": "Encender de nuevo"
     },
