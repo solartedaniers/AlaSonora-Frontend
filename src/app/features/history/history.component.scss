@@ -19,6 +19,23 @@
   padding: 0;
 }
 
+// La lámina y su botón de borrar son hermanos: el botón flota en la esquina de la foto.
+.history-item {
+  position: relative;
+}
+
+.history-item__delete {
+  position: absolute;
+  inset-block-start: calc(var(--space-unit) * 3);
+  inset-inline-end: calc(var(--space-unit) * 3);
+
+  // En el celular la lámina es una fila: lo dejo en la esquina sin tapar el nombre.
+  @media (max-width: calc(theme('screens.sm') - 1px)) {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+  }
+}
+
 .history-sheet {
   display: flex;
   flex-direction: column;
@@ -31,6 +48,7 @@
     grid-template-columns: calc(var(--space-unit) * 24) minmax(0, 1fr);
     column-gap: calc(var(--space-unit) * 4);
     align-items: start;
+    padding-inline-end: var(--touch-target);
 
     > :not(.history-sheet__print) {
       grid-column: 2;
@@ -73,7 +91,14 @@
   }
 }
 
-// Lista: una línea de registro por detección, separadas por filetes.
+// Lista: una línea de registro por detección, separadas por filetes; el botón de borrar va al final.
+.history-list-item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-unit) * 3);
+  border-block-end: var(--stroke-hairline) solid var(--color-outline-variant);
+}
+
 .history-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -82,8 +107,9 @@
     'species species';
   align-items: center;
   gap: calc(var(--space-unit) * 2) calc(var(--space-unit) * 4);
+  flex: 1;
+  min-width: 0;
   padding-block: calc(var(--space-unit) * 4);
-  border-block-end: var(--stroke-hairline) solid var(--color-outline-variant);
   transition: background-color var(--duration-fast) var(--ease-out);
 
   > :nth-child(1) {

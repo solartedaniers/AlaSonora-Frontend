@@ -63,6 +63,16 @@ describe('OfflineRecordingsLogService', () => {
     expect(service.entries()[0].outcome).toBe('failed');
   });
 
+  it('forgets only the row of a deleted detection', async () => {
+    await service.record(entry('a', 2));
+    await service.record(entry('b', 1));
+
+    await service.forgetDetection('detection-a');
+    await service.refresh();
+
+    expect(service.entries().map((e) => e.id)).toEqual(['b']);
+  });
+
   it('forgets everything on clear', async () => {
     await service.record(entry('a', 1));
 

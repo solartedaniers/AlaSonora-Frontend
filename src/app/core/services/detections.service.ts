@@ -99,6 +99,12 @@ export class DetectionsService {
   }
 
   /** Borra cualquier detección (pública o privada), solo para el panel de administración. */
+  /** Solo borra si soy el dueño: si es de otro o ya no existe, el backend responde 404. */
+  async deleteMine(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete<void>(`${environment.apiBaseUrl}/detections/${id}`));
+    this.cache.invalidate(DETECTION_CACHE_KEYS);
+  }
+
   async deleteAsAdmin(id: string): Promise<void> {
     await firstValueFrom(this.http.delete<void>(`${environment.apiBaseUrl}/admin/detections/${id}`));
     this.cache.invalidate(DETECTION_CACHE_KEYS);

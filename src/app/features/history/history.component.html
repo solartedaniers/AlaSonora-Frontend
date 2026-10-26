@@ -95,7 +95,7 @@
         } @else if (view() === 'gallery') {
           <ul class="history-gallery">
             @for (d of filtered(); track d.id) {
-              <li class="reveal">
+              <li class="reveal history-item">
                 <a [routerLink]="['/result', d.id]" class="history-sheet" data-glow>
                   <span class="history-sheet__print">
                     <app-species-image [src]="d.species.imageUrl" notice="compact" />
@@ -110,13 +110,15 @@
                   </span>
                   <app-confidence-badge [value]="d.confidence" />
                 </a>
+                <!-- Fuera del enlace: un botón dentro de un <a> no es accesible. -->
+                <app-delete-detection-button class="history-item__delete" [detectionId]="d.id" (deleted)="removeDetection($event)" />
               </li>
             }
           </ul>
         } @else {
           <ol class="list-none p-0 m-0 border-t">
             @for (d of filtered(); track d.id) {
-              <li>
+              <li class="history-list-item">
                 <a [routerLink]="['/result', d.id]" class="history-row">
                   <span class="font-data text-sm text-on-surface-variant">{{ d.recordedAt | date: 'short' }}</span>
                   <span class="min-w-0">
@@ -130,6 +132,7 @@
                   </span>
                   <app-confidence-badge [value]="d.confidence" />
                 </a>
+                <app-delete-detection-button [detectionId]="d.id" (deleted)="removeDetection($event)" />
               </li>
             }
           </ol>

@@ -15,6 +15,7 @@ import { NAVIGATION_CACHE_KEYS, NavigationCacheService } from '../../core/servic
 import { SpeciesImageComponent } from '../../shared/components/species-image/species-image.component';
 import { OfflineStorageService } from '../../core/services/offline-storage.service';
 import { OfflineRecordingsComponent } from './offline-recordings/offline-recordings.component';
+import { DeleteDetectionButtonComponent } from './delete-detection-button/delete-detection-button.component';
 
 type HistoryView = 'gallery' | 'list';
 type StatusFilter = 'all' | SyncStatus;
@@ -23,7 +24,7 @@ type HistoryLoadState = 'loading' | 'ready' | 'error';
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [SpeciesImageComponent, CountUpComponent, LoadingStateComponent, OfflineRecordingsComponent,
+  imports: [SpeciesImageComponent, CountUpComponent, LoadingStateComponent, OfflineRecordingsComponent, DeleteDetectionButtonComponent,
     RouterLink,
     DatePipe,
     NavHeaderComponent,
@@ -95,6 +96,11 @@ export class HistoryComponent implements OnInit {
       this.logger.error('History', 'load failed', error);
       this.loadState.set('error');
     }
+  }
+
+  // El backend ya la borró y el caché quedó invalidado: solo la quito de lo que se ve.
+  removeDetection(id: string): void {
+    this.all.update((detections) => detections.filter((d) => d.id !== id));
   }
 
   setView(view: HistoryView): void {

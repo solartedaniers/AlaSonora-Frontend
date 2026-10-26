@@ -11,7 +11,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
     <div role="status" aria-live="polite">
       @if (toast.messageKey(); as key) {
         <p class="toast">
-          <span class="material-symbols-outlined shrink-0 text-primary" aria-hidden="true">mark_email_read</span>
+          <span class="material-symbols-outlined shrink-0 text-primary" aria-hidden="true">{{ toast.icon() }}</span>
           {{ key | translate }}
         </p>
       }
