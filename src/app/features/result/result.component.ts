@@ -97,12 +97,7 @@ export class ResultComponent implements OnInit {
     }
   }
 
-  /**
-   * El botón solo alternaba un signal booleano sin tocar ningún elemento
-   * <audio> real, por lo que nunca sonaba nada; ahora controla directamente
-   * el <audio> enlazado a `d.audioUrl` y `isPlaying` se sincroniza con sus
-   * eventos nativos (play/pause/ended) en vez de asumir el estado.
-   */
+  /** Controlo el <audio> real de d.audioUrl y sincronizo isPlaying con sus eventos play/pause/ended. */
   togglePlayback(): void {
     const audio = this.audioPlayerRef?.nativeElement;
     const audioUrl = this.view()?.audioUrl;
@@ -162,9 +157,7 @@ export class ResultComponent implements OnInit {
     this.router.navigateByUrl('/record');
   }
 
-  // Solo aplica sobre una detección ya guardada (necesita un id real de
-  // backend); el resultado de un draft aún no confirmado no admite foto
-  // propia todavía.
+  // Solo aplica a una detección ya guardada: un borrador aún no tiene id en el backend.
   async onObserverPhotoSelected(event: Event): Promise<void> {
     const file = (event.target as HTMLInputElement).files?.[0];
     const detection = this.detection();

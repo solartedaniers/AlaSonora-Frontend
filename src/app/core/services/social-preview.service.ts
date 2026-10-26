@@ -4,11 +4,7 @@ import { BRAND_ASSETS } from '../../shared/brand/brand-assets';
 import { I18nService } from './i18n.service';
 import { SITE_ORIGIN } from './canonical-url.service';
 
-/**
- * Publico la imagen para compartir el link (og:image y la tarjeta grande de Twitter). Los rastreadores
- * exigen una URL absoluta, así que sin SITE_URL no publico nada. Corre también en el servidor; el
- * diccionario ya está cargado porque el app initializer lo espera.
- */
+/** Publico la imagen para compartir el link (og:image y Twitter); sin SITE_URL no publico nada porque exigen URL absoluta. */
 @Injectable({ providedIn: 'root' })
 export class SocialPreviewService {
   private readonly meta = inject(Meta);

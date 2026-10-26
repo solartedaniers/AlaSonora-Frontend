@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GeoLocation } from '../models';
 import { ClassificationService } from './classification.service';
@@ -15,33 +15,43 @@ export const PENDING_RECORDINGS_SYNC_TAG = 'alasonora-pending-recordings';
 export const FALLBACK_LOCATION: GeoLocation = { latitude: 4.6097, longitude: -74.0817 };
 
 /**
- * Modo campo: las grabaciones hechas sin señal quedan en IndexedDB
- * (OfflineStorageService) y las envío solas al volver la conexión.
- * Cualquiera de estos disparadores vacía la cola:
- *  - Background Sync: el service worker (public/sw.js) lanza `sync` al volver
- *    la conexión y avisa a las pestañas abiertas (solo Chromium).
- *  - El evento `online` de window (Firefox/Safari no tienen Background Sync).
- *  - El arranque de la app, por lo que quedó de una sesión anterior.
+ * Envío solas las grabaciones que quedaron en IndexedDB sin señal: al recibir el sync del service worker,
+ * con el evento online (Firefox/Safari) o al arrancar la app.
  */
 @Injectable({ providedIn: 'root' })
-export class PendingRecordingsSyncService {
+export class PendingRecordingsSyncService implements OnDestroy {
   private readonly offlineStorage = inject(OfflineStorageService);
   private readonly logger = inject(LoggerService);
   private readonly classificationService = inject(ClassificationService);
   private readonly detectionsService = inject(DetectionsService);
   private readonly userService = inject(UserService);
 
-  /** Solo en el navegador; se llama una vez al arrancar. */
+  private started = false;
+  /** Sin Web Locks encadeno las sincronizaciones aquí: solo protege esta pestaña, no las demás. */
+  private localQueue: Promise<void> = Promise.resolve();
+  private readonly onOnline = () => void this.syncNow();
+  private readonly onServiceWorkerMessage = async ({ data, ports }: MessageEvent) => {
+    if (data?.type !== PENDING_RECORDINGS_SYNC_TAG) return;
+    await this.syncNow();
+    // Le digo al SW si la sincronización terminó de verdad; si no, falla el
+    // evento `sync` y el navegador lo reintenta.
+    ports[0]?.postMessage({ remaining: (await this.offlineStorage.listPending()).length });
+  };
+
+  /** Solo en el navegador; instalo los listeners una sola vez aunque me llamen de nuevo. */
   start(): void {
-    window.addEventListener('online', () => void this.syncNow());
-    navigator.serviceWorker?.addEventListener('message', async ({ data, ports }) => {
-      if (data?.type !== PENDING_RECORDINGS_SYNC_TAG) return;
-      await this.syncNow();
-      // Le digo al SW si la sincronización terminó de verdad; si no, falla el
-      // evento `sync` y el navegador lo reintenta.
-      ports[0]?.postMessage({ remaining: (await this.offlineStorage.listPending()).length });
-    });
+    if (this.started) return;
+    this.started = true;
+    window.addEventListener('online', this.onOnline);
+    navigator.serviceWorker?.addEventListener('message', this.onServiceWorkerMessage);
     void this.syncNow();
+  }
+
+  ngOnDestroy(): void {
+    if (!this.started) return;
+    window.removeEventListener('online', this.onOnline);
+    navigator.serviceWorker?.removeEventListener('message', this.onServiceWorkerMessage);
+    this.started = false;
   }
 
   async enqueue(recording: Omit<PendingRecording, 'id'>): Promise<void> {
@@ -55,10 +65,14 @@ export class PendingRecordingsSyncService {
 
   async syncNow(): Promise<void> {
     if (!navigator.onLine) return;
-    // Web Lock: el mensaje del SW y el evento `online` llegan juntos a cada pestaña.
-    // Vacío la cola de a una vez (también entre pestañas) y la leo solo con el lock,
-    // así una grabación ya enviada nunca se sube ni se guarda dos veces.
-    await navigator.locks.request(PENDING_RECORDINGS_SYNC_TAG, () => this.drain());
+    // Con el Web Lock vacío la cola de a una vez, también entre pestañas: así nunca subo ni guardo dos veces la misma grabación.
+    await this.runExclusively(() => this.drain());
+  }
+
+  private runExclusively(task: () => Promise<void>): Promise<void> {
+    if (navigator.locks) return navigator.locks.request(PENDING_RECORDINGS_SYNC_TAG, task);
+    this.localQueue = this.localQueue.then(task, task);
+    return this.localQueue;
   }
 
   private async drain(): Promise<void> {
@@ -69,9 +83,7 @@ export class PendingRecordingsSyncService {
       try {
         await this.send(userId, recording);
       } catch (error) {
-        // 422 = el clasificador rechazó este audio para siempre (sin especie o mala
-        // calidad): reintentar fallaría igual, así que sale de la cola. Cualquier
-        // otro fallo (red, backend caído) se queda y se reintenta en el siguiente disparo.
+        // Un 422 es un rechazo definitivo del audio, así que lo saco de la cola; cualquier otro fallo se reintenta luego.
         if (!(error instanceof HttpErrorResponse && error.status === 422)) return;
         this.logger.warn('PendingSync', 'queued recording rejected by the classifier, dropping it', error);
       }

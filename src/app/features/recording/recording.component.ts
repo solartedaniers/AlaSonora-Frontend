@@ -8,7 +8,7 @@ import { FrequencyAxisComponent } from '../../shared/components/frequency-axis/f
 import { SongSonogramComponent } from '../../shared/components/song-sonogram/song-sonogram.component';
 import { SpectrogramWaterfallComponent } from '../../shared/components/spectrogram-waterfall/spectrogram-waterfall.component';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
-import { AudioCaptureService } from '../../core/services/audio-capture.service';
+import { AudioCaptureService, AudioWorkerUnavailableError } from '../../core/services/audio-capture.service';
 import { ClassificationResult, ClassificationService, UploadedRecording } from '../../core/services/classification.service';
 import { UserService } from '../../core/services/user.service';
 import { I18nService } from '../../core/services/i18n.service';
@@ -48,10 +48,18 @@ const NO_SPECIES_IDENTIFIED_CODE = 'NO_SPECIES_IDENTIFIED';
 const NO_SPECIES_IDENTIFIED_LEGACY_DETAIL = 'No bird species were identified in this recording';
 // Motor dormido: código estable del backend o las respuestas del proxy de Render mientras arranca.
 const AI_ENGINE_UNAVAILABLE_CODE = 'AI_ENGINE_UNAVAILABLE';
+// Pool de IA lleno en el backend (503): el motor está encendido, así que no lo trato como dormido.
+const AI_ENGINE_BUSY_CODE = 'AI_ENGINE_BUSY';
 const ENGINE_ASLEEP_STATUSES = [502, 503, 504];
 // Audio rechazado por el backend (formato o tamaño): mismos textos que la validación local.
 const AUDIO_TOO_LARGE_CODE = 'AUDIO_TOO_LARGE';
 const AUDIO_UNSUPPORTED_CODE = 'AUDIO_UNSUPPORTED';
+// Rechazos de calidad del motor: cada código del backend tiene su texto en el i18n.
+const AUDIO_QUALITY_MESSAGES: Record<string, string> = {
+  AUDIO_TOO_NOISY: 'recording.tooNoisy',
+  NO_BIRD_SIGNAL: 'recording.noBirdSignal',
+  AUDIO_REJECTED: 'recording.audioRejected',
+};
 // ?tab=upload abre directo la pestaña de subir archivo (enlace del Dashboard).
 const TAB_QUERY_PARAM = 'tab';
 
@@ -176,7 +184,14 @@ export class RecordingComponent {
     if (this.capture.isRecording()) {
       const durationSeconds = Math.round(this.capture.elapsedSeconds());
       const peakFrequencyHz = this.capture.latestFrame()?.peakFrequencyHz ?? 0;
-      const wavBlob = await this.capture.stop();
+      let wavBlob: Blob;
+      try {
+        wavBlob = await this.capture.stop();
+      } catch (error) {
+        if (!(error instanceof AudioWorkerUnavailableError)) throw error;
+        this.classifyError.set(this.i18n.translate('recording.workerUnavailable'));
+        return;
+      }
       await this.classifyAndNavigate({ audio: wavBlob, durationSeconds, peakFrequencyHz });
     } else {
       if (!this.canSubmit()) return;
@@ -187,9 +202,13 @@ export class RecordingComponent {
         await this.capture.start();
         this.micDenied.set(false);
         this.hasSonogram.set(true);
-      } catch {
-        // Permiso de micrófono denegado o no disponible: no interrumpimos
-        // el flujo, el usuario puede intentar de nuevo o usar "Subir archivo".
+      } catch (error) {
+        // Sin worker de audio no culpo al micrófono: digo la causa real.
+        if (error instanceof AudioWorkerUnavailableError) {
+          this.classifyError.set(this.i18n.translate('recording.workerUnavailable'));
+          return;
+        }
+        // Permiso de micrófono denegado o no disponible: el usuario puede intentar de nuevo o subir un archivo.
         this.micDenied.set(true);
       }
     }
@@ -275,9 +294,7 @@ export class RecordingComponent {
         species: result.species,
         recordedAt,
         audioStoragePath: attempt.uploaded.storagePath,
-        // Válida solo por unos minutos; suficiente para revisar el resultado
-        // antes de guardarlo. Tras guardar, el backend firma una nueva URL
-        // cada vez que se pide la detección, a partir de audioStoragePath.
+        // Vale unos minutos, suficiente para revisar antes de guardar; después el backend firma una nueva en cada lectura.
         audioUrl: attempt.uploaded.signedUrl,
         durationSeconds,
         confidence: result.confidence,
@@ -338,12 +355,11 @@ export class RecordingComponent {
   private static isEngineAsleep(error: unknown): boolean {
     if (!(error instanceof HttpErrorResponse)) return false;
     const code = (error.error as { errorCode?: string } | null)?.errorCode;
+    if (code === AI_ENGINE_BUSY_CODE) return false;
     return code === AI_ENGINE_UNAVAILABLE_CODE || ENGINE_ASLEEP_STATUSES.includes(error.status);
   }
 
-  // Sin señal: la grabación queda en la cola de IndexedDB y
-  // PendingRecordingsSyncService la clasifica y guarda sola al volver la
-  // conexión. El GPS sí se intenta: no depende de datos móviles.
+  // Sin señal dejo la grabación en IndexedDB y PendingRecordingsSyncService la envía al volver la conexión; el GPS sí lo intento.
   private async saveForLater(submission: AudioSubmission): Promise<void> {
     await this.pendingSync.enqueue({
       recordedAt: new Date().toISOString(),
@@ -355,26 +371,20 @@ export class RecordingComponent {
     this.savedOffline.set(true);
   }
 
-  /**
-   * El backend ya distingue estas causas con status codes y mensajes
-   * distintos (502 = motor de IA caído, 422 con el detail de calidad de
-   * audio rechazada, 422 "sin especie identificada"); antes se mostraba el
-   * mismo "revisa tu conexión" para las tres, sugiriendo un problema de red
-   * que no existía en los casos 422.
-   */
+  /** Doy un mensaje distinto por causa (motor caído u ocupado, audio rechazado, sin especie) en vez de culpar siempre a la red. */
   private resolveClassifyErrorMessage(error: unknown): string {
     const code = error instanceof HttpErrorResponse ? (error.error as { errorCode?: string } | null)?.errorCode : undefined;
     if (code === AUDIO_TOO_LARGE_CODE) return this.uploadProblemMessage('tooLarge');
     if (code === AUDIO_UNSUPPORTED_CODE) return this.uploadProblemMessage('unsupported');
+    if (code === AI_ENGINE_BUSY_CODE) return this.i18n.translate('recording.engine.busy');
+    if (code && AUDIO_QUALITY_MESSAGES[code]) return this.i18n.translate(AUDIO_QUALITY_MESSAGES[code]);
     if (error instanceof HttpErrorResponse && error.status === 422) {
       const body = error.error as { message?: string; errorCode?: string } | null;
       const detail = body?.message;
       if (body?.errorCode === NO_SPECIES_IDENTIFIED_CODE || detail === NO_SPECIES_IDENTIFIED_LEGACY_DETAIL) {
         return this.i18n.translate('recording.noSpeciesIdentified');
       }
-      // Cualquier otro 422 (audio rechazado por AudioQualityAnalyzer) ya
-      // trae un mensaje final en español desde el ai-engine — se muestra
-      // tal cual en vez de reemplazarlo por un texto genérico de conexión.
+      // Un backend anterior sin código todavía manda el texto del motor: lo muestro tal cual.
       if (detail) return detail;
     }
     return this.i18n.translate('recording.classifyError');

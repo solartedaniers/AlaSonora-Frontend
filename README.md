@@ -18,6 +18,15 @@ identificar la especie y muestra el resultado, el historial y el mapa de la red.
 con Supabase Auth, y la interfaz está en español e inglés, con tema claro y oscuro. Si grabas sin
 señal en el campo, la grabación queda guardada y se envía sola cuando vuelve la conexión.
 
+## Identificación por foto: mejora futura, apagada a propósito
+
+La función principal de AlaSonora es identificar aves por su canto con BirdNET, y está activa. La
+identificación por foto la dejé como mejora futura y la apagué a propósito: es una decisión, no un
+error. El motor ya tiene el endpoint `/classify-photo`, pero en producción está desactivado con
+`PHOTO_CLASSIFICATION_ENABLED=false` en el motor y `photoIdentificationEnabled=false` en el frontend.
+Lo hice porque el servidor gratis de Render tiene 512 MB de RAM: el audio usa unos 360 MB y con fotos
+el proceso llegaría a unos 750 MB.
+
 ## Tecnologías
 
 | Pieza | Versión |

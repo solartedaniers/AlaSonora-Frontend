@@ -16,9 +16,7 @@ import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
-// Solo tipos: Leaflet toca `window` apenas se importa, así que el módulo
-// real se carga con import() dinámico y únicamente en el navegador (esta
-// ruta se renderiza en el servidor con SSR).
+// Solo tipos: Leaflet toca window al importarse, así que lo cargo con import() y solo en el navegador.
 import type * as Leaflet from 'leaflet';
 import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { NavHeaderComponent } from '../../shared/components/nav-header/nav-header.component';
@@ -91,18 +89,14 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   private destroyed = false;
 
   constructor() {
-    // Redibuja los pines cada vez que cambia el feed, incluida la primera
-    // carga (ngOnInit resuelve la promesa antes o después de ngAfterViewInit
-    // según la latencia de red, así que no se puede asumir un orden fijo).
+    // Redibujo los pines con cada cambio del feed, incluida la primera carga, porque no hay un orden fijo con ngAfterViewInit.
     effect(() => {
       const detections = this.feed();
       // untracked: dibujar lee la selección, pero este efecto solo debe volver a correr si cambia el
       // feed; si no, cada selección redibuja y su fitBounds cancela el vuelo del doble clic.
       if (this.map) untracked(() => this.renderMarkers(detections));
     });
-    // Otra pestaña de este navegador acaba de guardar una detección PUBLIC
-    // (llega por el Shared Worker): se recarga el feed público desde el
-    // backend en vez de armar un Detection parcial con el mensaje.
+    // Otra pestaña guardó una detección pública (Shared Worker): recargo el feed en vez de armar una detección parcial.
     effect(() => {
       if (this.liveSync.lastBroadcast()) void this.loadFeed(true);
     });
@@ -156,10 +150,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.destroyed) return; // se salió de /map antes de que terminara de cargar Leaflet
     this.leaflet = L;
 
-    // Los íconos por defecto de Leaflet referencian imágenes vía CSS
-    // relativo, que el bundler de Angular no resuelve; se sirven en su
-    // lugar desde public/images/leaflet (mismos nombres de archivo que
-    // Leaflet espera).
+    // Sirvo los íconos de Leaflet desde public/images/leaflet porque el bundler no resuelve sus rutas CSS.
     L.Icon.Default.mergeOptions({
       imagePath: '/images/leaflet/',
     });

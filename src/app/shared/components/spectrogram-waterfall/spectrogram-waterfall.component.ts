@@ -27,13 +27,7 @@ const PERIOD_SMOOTHING = 0.15;
 const DEFAULT_PERIOD_MS = 20;
 const MS_PER_SECOND = 1000;
 
-/**
- * Vista 3D en cascada de los frames del espectrograma.
- *
- * Igual que SpectrogramViewComponent: el bucle de requestAnimationFrame solo
- * LEE el último frame disponible y pinta; nunca pinta dentro de un mensaje,
- * así recibir datos y dibujar quedan desacoplados.
- */
+/** Vista 3D en cascada: igual que SpectrogramViewComponent, el rAF solo lee el último frame y pinta. */
 @Component({
   selector: 'app-spectrogram-waterfall',
   standalone: true,

@@ -10,11 +10,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 
-/**
- * Anima un número desde 0 hasta `value` cuando el componente entra en
- * viewport (IntersectionObserver), en lugar de al cargar la página —
- * evita animar métricas fuera de pantalla (landing stats, impacto de perfil).
- */
+/** Animo el número desde 0 cuando entra en pantalla (IntersectionObserver), no al cargar la página. */
 @Component({
   selector: 'app-count-up',
   standalone: true,

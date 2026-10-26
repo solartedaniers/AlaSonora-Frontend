@@ -11,6 +11,10 @@ import {
 } from '../../core/services/photo-classification.service';
 import { LoggerService } from '../../core/services/logger.service';
 
+// Códigos estables del backend (ApiErrorCode) para los rechazos de la foto.
+const NO_BIRD_IN_PHOTO_CODE = 'NO_BIRD_IN_PHOTO';
+const PHOTO_UNAVAILABLE_CODE = 'PHOTO_UNAVAILABLE';
+
 @Component({
   selector: 'app-photo-id',
   standalone: true,
@@ -53,16 +57,14 @@ export class PhotoIdComponent {
   }
 
   private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse && error.status === 422) {
-      const detail = (error.error as { message?: string } | null)?.message;
-      if (detail) return detail;
-    }
-    // 503: el motor de IA tiene apagada la clasificación por foto. El backend
-    // hoy reenvía cualquier fallo del motor como 502, así que ambos
-    // significan "esta función no está disponible ahora mismo".
-    if (error instanceof HttpErrorResponse && (error.status === 503 || error.status === 502)) {
-      return this.i18n.translate('photoId.unavailable');
-    }
+    if (!(error instanceof HttpErrorResponse)) return this.i18n.translate('photoId.genericError');
+    const body = error.error as { errorCode?: string; message?: string } | null;
+    if (body?.errorCode === NO_BIRD_IN_PHOTO_CODE) return this.i18n.translate('photoId.noBird');
+    if (body?.errorCode === PHOTO_UNAVAILABLE_CODE) return this.i18n.translate('photoId.unavailable');
+    // Un backend anterior sin código manda el texto del motor en el 422.
+    if (error.status === 422 && body?.message) return body.message;
+    // 502/503 sin código: el motor no responde, así que la función no está disponible ahora.
+    if (error.status === 503 || error.status === 502) return this.i18n.translate('photoId.unavailable');
     return this.i18n.translate('photoId.genericError');
   }
 }

@@ -17,13 +17,7 @@ export interface PendingRecording {
   gpsLocation?: GeoLocation;
 }
 
-/**
- * Encapsula IndexedDB detrás de una API basada en Promesas para que el
- * resto de la app no dependa del API de bajo nivel de IndexedDB (SRP).
- * Se usa junto al Service Worker: al grabar sin conexión, el audio se
- * guarda aquí; al recuperar conectividad, el Service Worker (o esta
- * clase, si la app está en primer plano) sincroniza lo pendiente.
- */
+/** Envuelvo IndexedDB en una API de promesas: aquí guardo las grabaciones sin conexión hasta que se sincronizan. */
 @Injectable({ providedIn: 'root' })
 export class OfflineStorageService {
   readonly pendingCount = signal(0);

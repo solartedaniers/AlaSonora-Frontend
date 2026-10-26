@@ -1,9 +1,10 @@
 import { ApplicationRef, CUSTOM_ELEMENTS_SCHEMA, computed, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AiEngineStatus, AiEngineStatusService } from '../../core/services/ai-engine-status.service';
-import { AudioCaptureService } from '../../core/services/audio-capture.service';
+import { AudioCaptureService, AudioWorkerUnavailableError } from '../../core/services/audio-capture.service';
 import { ClassificationService } from '../../core/services/classification.service';
 import { ConnectivityService } from '../../core/services/connectivity.service';
 import { DetectionDraftService } from '../../core/services/detection-draft.service';
@@ -103,5 +104,37 @@ describe('RecordingComponent with the AI engine off', () => {
     view.refresh();
     view.retryButton()!.click();
     expect(warmUp).toHaveBeenCalledTimes(2);
+  });
+
+  it('tells the user the engine is busy instead of treating it as asleep', () => {
+    const component = TestBed.createComponent(RecordingComponent).componentInstance;
+    const busy = new HttpErrorResponse({ status: 503, error: { errorCode: 'AI_ENGINE_BUSY' } });
+
+    expect(RecordingComponent['isEngineAsleep'](busy)).toBeFalse();
+    expect(RecordingComponent['isEngineAsleep'](new HttpErrorResponse({ status: 503 }))).toBeTrue();
+    expect(component['resolveClassifyErrorMessage'](busy)).toBe('t:recording.engine.busy');
+  });
+
+  it('shows the i18n text for each engine rejection code and keeps the legacy detail', () => {
+    const component = TestBed.createComponent(RecordingComponent).componentInstance;
+    const rejected = (error: object) =>
+      component['resolveClassifyErrorMessage'](new HttpErrorResponse({ status: 422, error }));
+
+    expect(rejected({ errorCode: 'AUDIO_TOO_NOISY' })).toBe('t:recording.tooNoisy');
+    expect(rejected({ errorCode: 'NO_BIRD_SIGNAL' })).toBe('t:recording.noBirdSignal');
+    expect(rejected({ errorCode: 'AUDIO_REJECTED' })).toBe('t:recording.audioRejected');
+    expect(rejected({ message: 'Texto de un backend anterior' })).toBe('Texto de un backend anterior');
+  });
+
+  it('explains that the audio worker is unavailable instead of blaming the microphone', async () => {
+    status.set('ready');
+    const capture = TestBed.inject(AudioCaptureService) as unknown as { start: () => Promise<void> };
+    capture.start = () => Promise.reject(new AudioWorkerUnavailableError());
+    const component = TestBed.createComponent(RecordingComponent).componentInstance;
+
+    await component.toggleRecording();
+
+    expect(component.classifyError()).toBe('t:recording.workerUnavailable');
+    expect(component['micDenied']()).toBeFalse();
   });
 });

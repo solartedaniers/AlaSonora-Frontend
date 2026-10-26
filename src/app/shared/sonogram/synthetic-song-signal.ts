@@ -14,11 +14,7 @@ const BAND_SIGMA_BINS = 2.4;
 const NOISE_FLOOR = 0.002;
 const DISPLAY_RMS_DB = -20;
 
-/**
- * Convierto la frase de canto en columnas de espectrograma para alimentar el
- * SpectrogramViewComponent real sin micrófono. Solo ilustrativo: la interfaz
- * debe marcarlo como ejemplo.
- */
+/** Convierto la frase de canto en columnas de espectrograma para SpectrogramViewComponent sin micrófono; es solo ilustrativo. */
 export class SyntheticSongSignal {
   static readonly COLUMNS_PER_SECOND = COLUMNS_PER_SECOND;
 

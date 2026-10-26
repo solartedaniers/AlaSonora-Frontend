@@ -19,11 +19,7 @@ export interface DetectionCandidate {
   confidence: number; // 0-100
 }
 
-/**
- * Un evento de detección: una grabación procesada por el modelo, con su
- * candidato principal, alternativas, y metadatos de campo (ubicación, fecha,
- * estado de sincronización offline).
- */
+/** Una detección: la grabación procesada con su candidato principal, alternativas y datos de campo. */
 export interface Detection {
   id: string;
   recordedAt: string; // ISO 8601

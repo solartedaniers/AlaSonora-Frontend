@@ -40,11 +40,7 @@ export class ClassificationService {
   private readonly supabase = inject(SupabaseClientService).client;
   private readonly user = inject(UserService);
 
-  /**
-   * Subo el WAV al bucket privado `recordings`. Solo la ruta se guarda a largo
-   * plazo (`Detection.audioStoragePath` en el backend); la URL firmada sirve para
-   * classify() y para reproducir antes de guardar, nada más: vence y nunca se guarda.
-   */
+  /** Subo el WAV al bucket privado recordings y solo guardo la ruta: la URL firmada vence y solo la uso para classify y escuchar. */
   async uploadRecording(userId: string, blob: Blob, onProgress?: (fraction: number) => void): Promise<UploadedRecording> {
     const storagePath = `${userId}/${Date.now()}.wav`;
     const token = await this.user.getAccessToken();

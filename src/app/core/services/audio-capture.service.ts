@@ -5,6 +5,13 @@ import { FrameHistory } from './frame-history';
 // Espectros que guardo de la grabación: alcanza para la vista más ancha (plana, 120 columnas).
 const HISTORY_FRAMES = 240;
 
+/** El navegador no soporta Web Workers o no pudo crear el de audio: sin él no hay espectro ni WAV. */
+export class AudioWorkerUnavailableError extends Error {
+  constructor() {
+    super('The audio processing worker is unavailable');
+  }
+}
+
 export interface SpectrogramFrame {
   magnitudes: Float32Array;
   peakFrequencyHz: number;
@@ -12,32 +19,8 @@ export interface SpectrogramFrame {
 }
 
 /**
- * Servicio responsable de capturar audio del micrófono y delegar el
- * procesamiento pesado (FFT) al Web Worker dedicado, manteniendo el hilo
- * principal libre para renderizar la interfaz con fluidez.
- *
- * EVENT LOOP — TASKS vs MICROTASKS:
- * -----------------------------------------------------------------------
- * - El `ScriptProcessorNode` entrega cada buffer de audio con un evento
- *   `audioprocess`, que llega al hilo principal como una TASK.
- * - Dentro de ese callback no se hace trabajo pesado: solo se copia el
- *   buffer y se transfiere al worker con `postMessage` (encolar el mensaje
- *   es síncrono y no bloquea; la FFT corre en el hilo del worker).
- * - La respuesta del worker llega como evento `message`, que también es una
- *   TASK (no una microtask). Su handler (`onWorkerMessage`) solo actualiza
- *   el signal `latestFrame`: barato, sin tocar el DOM ni el canvas.
- * - Las MICROTASKS aparecen al cerrar la grabación: `stop()` envuelve el
- *   mensaje `recording-encoded` en una Promise; su `resolve()` ocurre dentro
- *   de esa task de mensaje, y la continuación del `await` en quien llamó
- *   (RecordingComponent) corre como microtask justo al terminar esa task,
- *   antes de la siguiente task o del siguiente pintado.
- * - El PINTADO del espectrograma va en `requestAnimationFrame` dentro de
- *   `SpectrogramViewComponent`, nunca aquí: los callbacks de rAF no son
- *   tasks, se ejecutan en el paso de renderizado del event loop (una vez
- *   por frame de pantalla, después de las tasks y microtasks pendientes).
- *   Así recibir datos (tasks de alta frecuencia) queda desacoplado de
- *   pintar (máx. una vez por frame), y la interfaz no se congela aunque
- *   lleguen frames de audio muy seguidos.
+ * Capturo el micrófono y paso cada buffer al worker (una task por mensaje), que calcula la FFT; aquí solo actualizo latestFrame.
+ * stop() resuelve en una microtask y el pintado va en el requestAnimationFrame de SpectrogramViewComponent, así la UI no se congela.
  */
 @Injectable({ providedIn: 'root' })
 export class AudioCaptureService {
@@ -48,14 +31,7 @@ export class AudioCaptureService {
   readonly isRecording = signal(false);
   readonly latestFrame = signal<SpectrogramFrame | null>(null);
   readonly elapsedSeconds = signal(0);
-  // 0 dB por defecto: el slider hasta ahora era decorativo (nunca tocaba el
-  // audio real), así que su valor de UI de +12dB nunca se validó contra la
-  // señal real. Con el GainNode ya conectado de verdad, +12dB (~x4 lineal)
-  // saturaba casi toda grabación con nivel de micrófono normal — confirmado
-  // simulando la misma conversión dB→lineal y el clamp de encodeWav sobre
-  // una señal de amplitud realista (pico 0.5 tras el AGC del navegador):
-  // ~67% de las muestras quedaban recortadas. 0dB deja el nivel del
-  // micrófono intacto; el usuario sube ganancia solo cuando la necesita.
+  // Arranco en 0 dB: con +12 dB se recortaba ~67% de las muestras con un nivel de micrófono normal.
   readonly gainDb = signal(0);
   readonly highPassEnabled = signal(true);
   /** Espectros de la grabación actual; lo comparten la vista plana y la 3D. */
@@ -96,17 +72,20 @@ export class AudioCaptureService {
   async start(): Promise<void> {
     if (this.isRecording()) return;
 
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Creo el worker antes de pedir el micrófono: si falla, no dejo el micrófono abierto.
+    const worker = AudioCaptureService.createWorker();
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (error) {
+      worker.terminate();
+      throw error;
+    }
     this.audioContext = new AudioContext();
     const source = this.audioContext.createMediaStreamSource(this.mediaStream);
 
-    // NgZone.runOutsideAngular: el procesamiento de audio no debe disparar
-    // detección de cambios en cada buffer (varias veces por segundo); solo
-    // actualizamos el signal, que Angular observa de forma granular.
+    // Corro el audio fuera de Angular para no disparar detección de cambios en cada buffer; solo actualizo el signal.
     this.zone.runOutsideAngular(() => {
-      this.worker = new Worker(new URL('../../workers/audio-processing.worker', import.meta.url), {
-        type: 'module',
-      });
+      this.worker = worker;
       this.worker.onmessage = ({ data }: MessageEvent<AudioWorkerOutboundMessage>) =>
         this.onWorkerMessage(data);
 
@@ -117,11 +96,7 @@ export class AudioCaptureService {
       this.filterNode.type = 'highpass';
       this.filterNode.frequency.value = this.highPassEnabled() ? AudioCaptureService.HIGH_PASS_CUTOFF_HZ : 0;
 
-      // Limitador: encodeWav (worker) recorta duro a [-1,1], lo que introduce
-      // distorsión armónica severa si el gain empuja la señal por encima de
-      // ese rango. Este compresor con ratio casi-infinito y ataque rápido
-      // evita que el GainNode sature la señal sin importar cuánta ganancia
-      // pida el usuario, en vez de solo confiar en un valor por defecto bajo.
+      // Limitador: encodeWav recorta duro a [-1,1], así que este compresor evita que la ganancia sature la señal.
       this.limiterNode = this.audioContext!.createDynamicsCompressor();
       this.limiterNode.threshold.value = -3;
       this.limiterNode.knee.value = 0;
@@ -132,9 +107,7 @@ export class AudioCaptureService {
       this.processorNode = this.audioContext!.createScriptProcessor(2048, 1, 1);
       this.processorNode.onaudioprocess = (event) => this.onAudioProcess(event);
 
-      // source -> gain -> highpass -> limiter -> processor: el worker mide
-      // RMS sobre la señal YA afectada por estos nodos, así el slider/toggle
-      // cambian el nivel real capturado, no solo un valor decorativo en la UI.
+      // source -> gain -> highpass -> limiter -> processor: el worker mide el nivel ya afectado por estos nodos.
       source.connect(this.gainNode);
       this.gainNode.connect(this.filterNode);
       this.filterNode.connect(this.limiterNode);
@@ -150,16 +123,20 @@ export class AudioCaptureService {
     }, 100);
   }
 
+  private static createWorker(): Worker {
+    if (typeof Worker === 'undefined') throw new AudioWorkerUnavailableError();
+    try {
+      return new Worker(new URL('../../workers/audio-processing.worker', import.meta.url), { type: 'module' });
+    } catch {
+      throw new AudioWorkerUnavailableError();
+    }
+  }
+
   private static dbToLinear(db: number): number {
     return Math.pow(10, db / 20);
   }
 
-  /**
-   * Detiene la captura y pide al worker que empaquete todo el audio
-   * acumulado como un WAV antes de terminarlo, para poder subirlo a
-   * Supabase Storage sin haber bloqueado el hilo principal con esa
-   * codificación.
-   */
+  /** Detengo la captura y pido al worker el WAV de todo lo grabado, sin codificarlo en el hilo principal. */
   async stop(): Promise<Blob> {
     this.gainNode?.disconnect();
     this.filterNode?.disconnect();
@@ -179,10 +156,15 @@ export class AudioCaptureService {
         if (data.type !== 'recording-encoded') return;
         resolve(new Blob([data.wavBuffer], { type: 'audio/wav' }));
       };
+      // Si el script del worker no cargó o falló, rechazo en vez de esperar para siempre.
+      worker.onerror = () => reject(new AudioWorkerUnavailableError());
       worker.postMessage({ type: 'finalize-recording' });
-    });
-    worker?.terminate();
+    }).finally(() => this.release(worker));
+    return wavBlob;
+  }
 
+  private release(worker: Worker | undefined): void {
+    worker?.terminate();
     this.isRecording.set(false);
     this.gainNode = undefined;
     this.filterNode = undefined;
@@ -191,7 +173,6 @@ export class AudioCaptureService {
     this.audioContext = undefined;
     this.mediaStream = undefined;
     this.worker = undefined;
-    return wavBlob;
   }
 
   private onAudioProcess(event: AudioProcessingEvent): void {

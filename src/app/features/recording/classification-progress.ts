@@ -8,9 +8,8 @@ const START_PERCENT = 1;
 const DONE_PERCENT = 100;
 
 /**
- * Estado de la barra al clasificar un audio: etapa, porcentaje y error. La subida aporta progreso
- * real; el análisis no tiene dato del servidor, así que avanza estimado y se frena antes de
- * estimateCap hasta que llega la respuesta. El temporizador solo existe mientras hay análisis.
+ * Estado de la barra al clasificar: la subida da progreso real y el análisis avanza estimado hasta estimateCap.
+ * El temporizador solo existe mientras hay análisis.
  */
 export class ClassificationProgress {
   readonly stage = signal<ClassificationStage | null>(null);

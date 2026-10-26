@@ -87,11 +87,8 @@ export class LandingComponent implements OnInit, OnDestroy {
   private pipelineIntervalId?: ReturnType<typeof setInterval>;
 
   async ngOnInit(): Promise<void> {
-    // Esta página se prerenderiza en build (SSG): las estadísticas son datos
-    // vivos, así que se piden solo en el navegador (si no, quedarían
-    // congeladas con los números del momento del build) y el setInterval
-    // nunca debe correr en el servidor (la app no llegaría a quedar estable
-    // y el prerender se colgaría).
+    // La página se prerenderiza: pido las estadísticas solo en el navegador para que no queden congeladas
+    // y para que el setInterval no cuelgue el prerender.
     if (!this.isBrowser) return;
     this.stats.set(await this.statsService.get());
     this.pipelineIntervalId = setInterval(() => {

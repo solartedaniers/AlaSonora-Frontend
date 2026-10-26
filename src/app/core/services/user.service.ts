@@ -9,11 +9,7 @@ import { environment } from '../../../environments/environment';
 
 const DEFAULT_ROLE: ObserverRole = 'hobbyist';
 
-/**
- * Estado de sesión sobre Supabase Auth (el SDK maneja entrar, registrarse, salir,
- * recuperar contraseña y refrescar la sesión). Los campos de perfil que no están
- * en user_metadata (institución, avatarUrl, etc.) vienen del Profile del backend.
- */
+/** Estado de sesión sobre Supabase Auth; los campos que no están en user_metadata vienen del Profile del backend. */
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly supabase = inject(SupabaseClientService).client;
@@ -31,16 +27,10 @@ export class UserService {
     });
   }
 
-  /**
-   * Leo la sesión local de Supabase directamente y no el signal `currentUser`, que
-   * se llena cuando resuelve getSession(); los guards corren antes y, con el signal,
-   * sacarían a un usuario con sesión al recargar la página.
-   */
+  /** Leo la sesión local directamente y no currentUser, que se llena después: si no, los guards sacarían al usuario al recargar. */
   async isAuthenticated(): Promise<boolean> {
-    // Modo campo: sin conexión un token vencido no se puede refrescar y getSession()
-    // reintentaría ~25 s para luego decir que no hay sesión, mandando al usuario a un
-    // /login que no sirve sin señal. Me basta la sesión guardada en el dispositivo; al
-    // volver la conexión se refresca como siempre (o falla y pide entrar de nuevo).
+    // Sin conexión no puedo refrescar un token vencido y getSession() tardaría ~25 s en rendirse: me basta la sesión guardada
+    // y al volver la conexión se refresca como siempre.
     if (!navigator.onLine) return this.storedSession() !== null;
     const { data } = await this.supabase.auth.getSession();
     return data.session !== null;
@@ -109,11 +99,7 @@ export class UserService {
     if (error) throw error;
   }
 
-  /**
-   * Copio la edición del Profile del backend a user_metadata de Supabase Auth, así
-   * `currentUser` (y quien lo lee, como el avatar del nav-header) queda al día sin
-   * una segunda fuente para los mismos campos.
-   */
+  /** Copio la edición del Profile a user_metadata para que currentUser quede al día sin una segunda fuente. */
   async syncMetadata(patch: {
     username?: string;
     avatar_url?: string;

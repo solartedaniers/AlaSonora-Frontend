@@ -20,23 +20,8 @@ import { SpectrogramPainter } from './spectrogram-painter';
 import { LIVE_INTENSITY_GAIN } from './spectrogram-scale';
 
 /**
- * Dibuja el espectrograma en un <canvas>.
- *
- * EVENT LOOP — por qué el pintado va en `requestAnimationFrame`:
- * -----------------------------------------------------------------------
- * `AudioCaptureService` actualiza su signal `latestFrame` desde el handler
- * del evento `message` del worker, que es una TASK (ver comentario en ese
- * servicio). Si pintáramos el canvas dentro de ese mismo handler, cada
- * frame de audio (varias veces por segundo) dispararía un dibujo síncrono,
- * compitiendo con cualquier otra interacción del usuario.
- *
- * En cambio, este componente mantiene su propio bucle de rAF: sus
- * callbacks no son tasks, corren en el paso de renderizado del event loop
- * (una vez por refresco de pantalla, tras las tasks y microtasks
- * pendientes) y en cada uno simplemente LEEN el último valor del signal y
- * pintan. Así "recibir datos" (tasks de alta frecuencia) queda desacoplado
- * de "pintar" (máx. ~60 veces por segundo), sin importar cuántos frames de
- * audio lleguen entre repintados.
+ * Dibujo el espectrograma desde mi propio requestAnimationFrame, nunca dentro del mensaje del worker (una task):
+ * así recibir datos queda desacoplado de pintar, máximo una vez por frame.
  */
 @Component({
   selector: 'app-spectrogram-view',

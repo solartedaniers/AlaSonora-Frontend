@@ -31,9 +31,8 @@ const CHANNEL_TOPIC = 'public-detections';
 const CREATED_EVENT = 'detection-created';
 
 /**
- * Campana de avisos. El historial y el estado de leído viven en el backend (se conservan entre
- * dispositivos); Supabase Realtime solo avisa "hay algo nuevo" mientras la app está abierta y hay
- * sesión. No hay sondeo: si llega un aviso con la pestaña oculta, pido el detalle al volver a ella.
+ * El historial y el leído viven en el backend; Supabase Realtime solo avisa que hay algo nuevo mientras la app está abierta.
+ * No sondeo: si llega un aviso con la pestaña oculta, pido el detalle al volver.
  */
 @Injectable({ providedIn: 'root' })
 export class NotificationsService {

@@ -4,11 +4,7 @@ import { DOCUMENT } from '@angular/common';
 // Superficies que reciben el brillo: todos los botones y lo marcado con data-glow.
 const GLOW_TARGETS = '.btn, [data-glow]';
 
-/**
- * Brillo que sigue al cursor en botones y superficies `[data-glow]`, con un solo
- * listener delegado y pasivo (una actualización por frame) en vez de una directiva
- * por elemento. Solo escribo la posición en variables CSS; el brillo es CSS puro.
- */
+/** Brillo que sigue al cursor en [data-glow] con un solo listener pasivo; solo escribo la posición en variables CSS. */
 @Injectable({ providedIn: 'root' })
 export class CursorGlowService {
   private readonly document = inject(DOCUMENT);

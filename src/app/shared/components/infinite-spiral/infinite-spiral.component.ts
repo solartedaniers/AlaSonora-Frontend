@@ -34,9 +34,8 @@ const MIN_RADIUS_FACTOR = 0.75;
 const EMPTY_FRAME_COUNT = 5;
 
 /**
- * Anillo 3D de especies ("Especies destacadas"). El giro es la animación CSS original
- * (rotateY + translateZ + perspective); esta clase solo la lee y la desplaza con la
- * Web Animations API para saber qué especie queda al frente y llevar a la elegida.
+ * Anillo 3D de especies: el giro es CSS y aquí lo leo con Web Animations para saber qué especie queda al frente
+ * y llevar a la elegida.
  */
 @Component({
   selector: 'app-infinite-spiral',

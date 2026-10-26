@@ -1,13 +1,7 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
 import { I18nService } from '../../core/services/i18n.service';
 
-/**
- * Pipe "impuro" a propósito: debe re-evaluarse cuando cambia el idioma
- * activo (I18nService.lang), lo cual no ocurre con un pipe puro estándar
- * porque el argumento (la clave) no cambia. El costo de recomputar es
- * insignificante frente a la ganancia de que todo el árbol de texto se
- * actualice reactivamente sin lógica manual de suscripción en cada componente.
- */
+/** Pipe impuro a propósito: la clave no cambia al cambiar el idioma, así que lo reevalúo siempre; el costo es mínimo. */
 @Pipe({
   name: 'translate',
   standalone: true,

@@ -275,6 +275,9 @@
     "classifyError": "No se pudo clasificar el audio. Revisa tu conexión e inténtalo de nuevo.",
     "savedOffline": "Sin conexión: la grabación quedó guardada en este dispositivo y se clasificará y guardará sola (como privada) cuando vuelva la señal.",
     "noSpeciesIdentified": "No se pudo identificar ninguna especie en esta grabación — intenta con un audio más claro o más cercano al canto del ave.",
+    "tooNoisy": "Hay demasiado ruido de fondo en la grabación. Intenta grabar en un lugar más silencioso.",
+    "noBirdSignal": "No se detectó canto de ave en la grabación. Acércate un poco más al ave e inténtalo de nuevo.",
+    "audioRejected": "El motor de IA no pudo analizar este audio. Intenta con otra grabación.",
     "eyebrow": "Estación de escucha",
     "title": "Graba un canto",
     "tabsLabel": "Modo de captura",
@@ -288,11 +291,13 @@
     "viewFlat": "Plano",
     "viewWaterfall": "3D",
     "unsupported": "Tu navegador no permite grabar audio aquí; puedes subir un archivo.",
+    "workerUnavailable": "Tu navegador no pudo iniciar el procesamiento de audio para grabar. Actualízalo o sube un archivo de audio.",
     "engine": {
       "waking": "Motor de IA apagado · encendiendo…",
       "ready": "Motor de IA encendido",
       "unavailable": "Motor de IA apagado",
       "timeout": "Motor de IA apagado. Inténtalo de nuevo en un momento.",
+      "busy": "El motor de IA está atendiendo muchas solicitudes. Inténtalo de nuevo en un momento.",
       "locked": "Podrás grabar y subir audios en cuanto el motor de IA esté encendido.",
       "retry": "Encender de nuevo"
     },
@@ -355,6 +360,7 @@
     "disclaimer": "Esta identificación fue generada por un modelo de inteligencia artificial y es una referencia probabilística; valida el resultado en campo antes de tratarlo como un registro científico confirmado.",
     "tryAnother": "Probar con otra foto",
     "genericError": "No se pudo clasificar la foto, por favor intenta de nuevo.",
+    "noBird": "No se identificó ningún ave en la foto. Prueba con una imagen donde el ave se vea más cerca y nítida.",
     "unavailable": "La identificación por foto no está disponible por ahora. Mientras tanto puedes identificar aves por su canto."
   },
   "history": {
