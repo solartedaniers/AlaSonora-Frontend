@@ -8,7 +8,7 @@ import { FrequencyAxisComponent } from '../../shared/components/frequency-axis/f
 import { SongSonogramComponent } from '../../shared/components/song-sonogram/song-sonogram.component';
 import { SpectrogramWaterfallComponent } from '../../shared/components/spectrogram-waterfall/spectrogram-waterfall.component';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
-import { AudioCaptureService } from '../../core/services/audio-capture.service';
+import { AudioCaptureService, AudioWorkerUnavailableError } from '../../core/services/audio-capture.service';
 import { ClassificationResult, ClassificationService, UploadedRecording } from '../../core/services/classification.service';
 import { UserService } from '../../core/services/user.service';
 import { I18nService } from '../../core/services/i18n.service';
@@ -178,7 +178,14 @@ export class RecordingComponent {
     if (this.capture.isRecording()) {
       const durationSeconds = Math.round(this.capture.elapsedSeconds());
       const peakFrequencyHz = this.capture.latestFrame()?.peakFrequencyHz ?? 0;
-      const wavBlob = await this.capture.stop();
+      let wavBlob: Blob;
+      try {
+        wavBlob = await this.capture.stop();
+      } catch (error) {
+        if (!(error instanceof AudioWorkerUnavailableError)) throw error;
+        this.classifyError.set(this.i18n.translate('recording.workerUnavailable'));
+        return;
+      }
       await this.classifyAndNavigate({ audio: wavBlob, durationSeconds, peakFrequencyHz });
     } else {
       if (!this.canSubmit()) return;
@@ -189,9 +196,13 @@ export class RecordingComponent {
         await this.capture.start();
         this.micDenied.set(false);
         this.hasSonogram.set(true);
-      } catch {
-        // Permiso de micrófono denegado o no disponible: no interrumpimos
-        // el flujo, el usuario puede intentar de nuevo o usar "Subir archivo".
+      } catch (error) {
+        // Sin worker de audio no culpo al micrófono: digo la causa real.
+        if (error instanceof AudioWorkerUnavailableError) {
+          this.classifyError.set(this.i18n.translate('recording.workerUnavailable'));
+          return;
+        }
+        // Permiso de micrófono denegado o no disponible: el usuario puede intentar de nuevo o subir un archivo.
         this.micDenied.set(true);
       }
     }

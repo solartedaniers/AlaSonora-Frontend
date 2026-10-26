@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GeoLocation } from '../models';
 import { ClassificationService } from './classification.service';
@@ -24,24 +24,39 @@ export const FALLBACK_LOCATION: GeoLocation = { latitude: 4.6097, longitude: -74
  *  - El arranque de la app, por lo que quedó de una sesión anterior.
  */
 @Injectable({ providedIn: 'root' })
-export class PendingRecordingsSyncService {
+export class PendingRecordingsSyncService implements OnDestroy {
   private readonly offlineStorage = inject(OfflineStorageService);
   private readonly logger = inject(LoggerService);
   private readonly classificationService = inject(ClassificationService);
   private readonly detectionsService = inject(DetectionsService);
   private readonly userService = inject(UserService);
 
-  /** Solo en el navegador; se llama una vez al arrancar. */
+  private started = false;
+  /** Sin Web Locks encadeno las sincronizaciones aquí: solo protege esta pestaña, no las demás. */
+  private localQueue: Promise<void> = Promise.resolve();
+  private readonly onOnline = () => void this.syncNow();
+  private readonly onServiceWorkerMessage = async ({ data, ports }: MessageEvent) => {
+    if (data?.type !== PENDING_RECORDINGS_SYNC_TAG) return;
+    await this.syncNow();
+    // Le digo al SW si la sincronización terminó de verdad; si no, falla el
+    // evento `sync` y el navegador lo reintenta.
+    ports[0]?.postMessage({ remaining: (await this.offlineStorage.listPending()).length });
+  };
+
+  /** Solo en el navegador; instalo los listeners una sola vez aunque me llamen de nuevo. */
   start(): void {
-    window.addEventListener('online', () => void this.syncNow());
-    navigator.serviceWorker?.addEventListener('message', async ({ data, ports }) => {
-      if (data?.type !== PENDING_RECORDINGS_SYNC_TAG) return;
-      await this.syncNow();
-      // Le digo al SW si la sincronización terminó de verdad; si no, falla el
-      // evento `sync` y el navegador lo reintenta.
-      ports[0]?.postMessage({ remaining: (await this.offlineStorage.listPending()).length });
-    });
+    if (this.started) return;
+    this.started = true;
+    window.addEventListener('online', this.onOnline);
+    navigator.serviceWorker?.addEventListener('message', this.onServiceWorkerMessage);
     void this.syncNow();
+  }
+
+  ngOnDestroy(): void {
+    if (!this.started) return;
+    window.removeEventListener('online', this.onOnline);
+    navigator.serviceWorker?.removeEventListener('message', this.onServiceWorkerMessage);
+    this.started = false;
   }
 
   async enqueue(recording: Omit<PendingRecording, 'id'>): Promise<void> {
@@ -58,7 +73,13 @@ export class PendingRecordingsSyncService {
     // Web Lock: el mensaje del SW y el evento `online` llegan juntos a cada pestaña.
     // Vacío la cola de a una vez (también entre pestañas) y la leo solo con el lock,
     // así una grabación ya enviada nunca se sube ni se guarda dos veces.
-    await navigator.locks.request(PENDING_RECORDINGS_SYNC_TAG, () => this.drain());
+    await this.runExclusively(() => this.drain());
+  }
+
+  private runExclusively(task: () => Promise<void>): Promise<void> {
+    if (navigator.locks) return navigator.locks.request(PENDING_RECORDINGS_SYNC_TAG, task);
+    this.localQueue = this.localQueue.then(task, task);
+    return this.localQueue;
   }
 
   private async drain(): Promise<void> {

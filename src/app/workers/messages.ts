@@ -71,6 +71,12 @@ export interface SharedWorkerHello {
   tabId: string;
 }
 
+/** La pestaña se va (destruye el servicio o la página se oculta): el worker la quita del conteo. */
+export interface SharedWorkerGoodbye {
+  type: 'goodbye';
+  tabId: string;
+}
+
 export interface SharedWorkerDetectionBroadcast {
   type: 'detection-broadcast';
   detectionId: string;
@@ -86,5 +92,5 @@ export interface SharedWorkerTabCount {
   count: number;
 }
 
-export type SharedWorkerInboundMessage = SharedWorkerHello | SharedWorkerDetectionBroadcast;
+export type SharedWorkerInboundMessage = SharedWorkerHello | SharedWorkerGoodbye | SharedWorkerDetectionBroadcast;
 export type SharedWorkerOutboundMessage = SharedWorkerDetectionBroadcast | SharedWorkerTabCount;

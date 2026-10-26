@@ -5,6 +5,13 @@ import { FrameHistory } from './frame-history';
 // Espectros que guardo de la grabación: alcanza para la vista más ancha (plana, 120 columnas).
 const HISTORY_FRAMES = 240;
 
+/** El navegador no soporta Web Workers o no pudo crear el de audio: sin él no hay espectro ni WAV. */
+export class AudioWorkerUnavailableError extends Error {
+  constructor() {
+    super('The audio processing worker is unavailable');
+  }
+}
+
 export interface SpectrogramFrame {
   magnitudes: Float32Array;
   peakFrequencyHz: number;
@@ -96,7 +103,14 @@ export class AudioCaptureService {
   async start(): Promise<void> {
     if (this.isRecording()) return;
 
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Creo el worker antes de pedir el micrófono: si falla, no dejo el micrófono abierto.
+    const worker = AudioCaptureService.createWorker();
+    try {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (error) {
+      worker.terminate();
+      throw error;
+    }
     this.audioContext = new AudioContext();
     const source = this.audioContext.createMediaStreamSource(this.mediaStream);
 
@@ -104,9 +118,7 @@ export class AudioCaptureService {
     // detección de cambios en cada buffer (varias veces por segundo); solo
     // actualizamos el signal, que Angular observa de forma granular.
     this.zone.runOutsideAngular(() => {
-      this.worker = new Worker(new URL('../../workers/audio-processing.worker', import.meta.url), {
-        type: 'module',
-      });
+      this.worker = worker;
       this.worker.onmessage = ({ data }: MessageEvent<AudioWorkerOutboundMessage>) =>
         this.onWorkerMessage(data);
 
@@ -150,6 +162,15 @@ export class AudioCaptureService {
     }, 100);
   }
 
+  private static createWorker(): Worker {
+    if (typeof Worker === 'undefined') throw new AudioWorkerUnavailableError();
+    try {
+      return new Worker(new URL('../../workers/audio-processing.worker', import.meta.url), { type: 'module' });
+    } catch {
+      throw new AudioWorkerUnavailableError();
+    }
+  }
+
   private static dbToLinear(db: number): number {
     return Math.pow(10, db / 20);
   }
@@ -179,10 +200,15 @@ export class AudioCaptureService {
         if (data.type !== 'recording-encoded') return;
         resolve(new Blob([data.wavBuffer], { type: 'audio/wav' }));
       };
+      // Si el script del worker no cargó o falló, rechazo en vez de esperar para siempre.
+      worker.onerror = () => reject(new AudioWorkerUnavailableError());
       worker.postMessage({ type: 'finalize-recording' });
-    });
-    worker?.terminate();
+    }).finally(() => this.release(worker));
+    return wavBlob;
+  }
 
+  private release(worker: Worker | undefined): void {
+    worker?.terminate();
     this.isRecording.set(false);
     this.gainNode = undefined;
     this.filterNode = undefined;
@@ -191,7 +217,6 @@ export class AudioCaptureService {
     this.audioContext = undefined;
     this.mediaStream = undefined;
     this.worker = undefined;
-    return wavBlob;
   }
 
   private onAudioProcess(event: AudioProcessingEvent): void {

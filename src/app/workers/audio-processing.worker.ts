@@ -1,12 +1,12 @@
 /// <reference lib="webworker" />
 
 import { AudioWorkerInboundMessage, AudioWorkerOutboundMessage } from './messages';
+import { SpectrumAnalyzer } from './spectrum-analyzer';
 
 /**
  * Web Worker dedicado (no comparte hilo con la UI, sin acceso al DOM).
  * Recibe fragmentos de audio PCM capturados en `AudioCaptureService` y
- * calcula su espectro (FFT ingenua, suficiente para visualización en
- * tiempo real) para no bloquear jamás el hilo principal del navegador
+ * calcula su espectro (FFT radix-2 en SpectrumAnalyzer) para no bloquear jamás el hilo principal del navegador
  * mientras se graba o sube un audio largo.
  */
 // Muestras PCM acumuladas de la grabación en curso, en el orden en que
@@ -14,6 +14,7 @@ import { AudioWorkerInboundMessage, AudioWorkerOutboundMessage } from './message
 // que el hilo principal tenga que tocar el audio crudo.
 let recordedChunks: Float32Array[] = [];
 let recordedSampleRate = 0;
+const spectrumAnalyzer = new SpectrumAnalyzer();
 
 addEventListener('message', ({ data }: MessageEvent<AudioWorkerInboundMessage>) => {
   if (data.type === 'finalize-recording') {
@@ -38,7 +39,7 @@ addEventListener('message', ({ data }: MessageEvent<AudioWorkerInboundMessage>) 
   recordedSampleRate = sampleRate;
   recordedChunks.push(samples.slice());
 
-  const magnitudes = computeMagnitudeSpectrum(samples, fftSize);
+  const magnitudes = spectrumAnalyzer.magnitudes(samples, fftSize);
   const peakFrequencyHz = findPeakFrequency(magnitudes, sampleRate, fftSize);
   const rmsDb = computeRmsDb(samples);
 
@@ -94,39 +95,14 @@ function writeString(view: DataView, offset: number, text: string): void {
   for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
 }
 
-/** DFT directa O(n²): suficientemente rápida para ventanas cortas (<=2048) en un worker dedicado. */
-function computeMagnitudeSpectrum(samples: Float32Array, fftSize: number): Float32Array {
-  const n = Math.min(samples.length, fftSize);
-  const half = Math.floor(n / 2);
-  const magnitudes = new Float32Array(half);
-
-  for (let k = 0; k < half; k++) {
-    let re = 0;
-    let im = 0;
-    for (let t = 0; t < n; t++) {
-      const angle = (2 * Math.PI * k * t) / n;
-      const windowed = samples[t] * hannWindow(t, n);
-      re += windowed * Math.cos(angle);
-      im -= windowed * Math.sin(angle);
-    }
-    magnitudes[k] = Math.sqrt(re * re + im * im) / n;
-  }
-
-  return magnitudes;
-}
-
 /** Ventanas FFT repartidas por toda la grabación, una por columna de salida. */
 function computeRecordingSpectrogram(samples: Float32Array, fftSize: number, columnCount: number): Float32Array[] {
   const lastStart = Math.max(0, samples.length - fftSize);
   const columns = Math.max(1, Math.min(columnCount, Math.floor(samples.length / fftSize) || 1));
   return Array.from({ length: columns }, (_, i) => {
     const start = columns === 1 ? 0 : Math.round((i * lastStart) / (columns - 1));
-    return computeMagnitudeSpectrum(samples.subarray(start, start + fftSize), fftSize);
+    return spectrumAnalyzer.magnitudes(samples.subarray(start, start + fftSize), fftSize);
   });
-}
-
-function hannWindow(t: number, n: number): number {
-  return 0.5 * (1 - Math.cos((2 * Math.PI * t) / (n - 1)));
 }
 
 function findPeakFrequency(magnitudes: Float32Array, sampleRate: number, fftSize: number): number {

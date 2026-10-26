@@ -288,6 +288,7 @@
     "viewFlat": "Plano",
     "viewWaterfall": "3D",
     "unsupported": "Tu navegador no permite grabar audio aquí; puedes subir un archivo.",
+    "workerUnavailable": "Tu navegador no pudo iniciar el procesamiento de audio para grabar. Actualízalo o sube un archivo de audio.",
     "engine": {
       "waking": "Motor de IA apagado · encendiendo…",
       "ready": "Motor de IA encendido",

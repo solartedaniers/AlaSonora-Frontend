@@ -288,6 +288,7 @@
     "viewFlat": "Flat",
     "viewWaterfall": "3D",
     "unsupported": "Your browser can't record audio here; you can upload a file.",
+    "workerUnavailable": "Your browser couldn't start the audio processing needed to record. Update it or upload an audio file.",
     "engine": {
       "waking": "AI engine off · starting…",
       "ready": "AI engine on",

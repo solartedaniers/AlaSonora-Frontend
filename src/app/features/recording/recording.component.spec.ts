@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AiEngineStatus, AiEngineStatusService } from '../../core/services/ai-engine-status.service';
-import { AudioCaptureService } from '../../core/services/audio-capture.service';
+import { AudioCaptureService, AudioWorkerUnavailableError } from '../../core/services/audio-capture.service';
 import { ClassificationService } from '../../core/services/classification.service';
 import { ConnectivityService } from '../../core/services/connectivity.service';
 import { DetectionDraftService } from '../../core/services/detection-draft.service';
@@ -113,5 +113,17 @@ describe('RecordingComponent with the AI engine off', () => {
     expect(RecordingComponent['isEngineAsleep'](busy)).toBeFalse();
     expect(RecordingComponent['isEngineAsleep'](new HttpErrorResponse({ status: 503 }))).toBeTrue();
     expect(component['resolveClassifyErrorMessage'](busy)).toBe('t:recording.engine.busy');
+  });
+
+  it('explains that the audio worker is unavailable instead of blaming the microphone', async () => {
+    status.set('ready');
+    const capture = TestBed.inject(AudioCaptureService) as unknown as { start: () => Promise<void> };
+    capture.start = () => Promise.reject(new AudioWorkerUnavailableError());
+    const component = TestBed.createComponent(RecordingComponent).componentInstance;
+
+    await component.toggleRecording();
+
+    expect(component.classifyError()).toBe('t:recording.workerUnavailable');
+    expect(component['micDenied']()).toBeFalse();
   });
 });
