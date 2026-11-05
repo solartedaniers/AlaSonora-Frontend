@@ -176,7 +176,7 @@
       "errorEmailNotConfirmedTitle": "Confirma tu correo electrónico",
       "errorEmailNotConfirmedBody": "Ya casi estás. Revisa tu bandeja de entrada y confirma tu correo antes de iniciar sesión.",
       "demoTitle": "Cuenta de ejemplo.",
-      "demoHint": "Para la revisión, entra con el correo y la contraseña que aparecen como ejemplo en los campos."
+      "demoHint": "Los campos ya traen la cuenta de ejemplo para la revisión: solo pulsa Iniciar Sesión. Si quieres entrar con otra cuenta, bórralos y escribe la tuya."
     },
     "forgotPassword": {
       "title": "Recupera tu acceso de campo",

@@ -10,7 +10,7 @@ import { UserService } from '../../../core/services/user.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { LoginComponent } from './login.component';
 
-describe('LoginComponent placeholders', () => {
+describe('LoginComponent demo account', () => {
   const original = { ...environment.demoAccount };
 
   beforeEach(() => {
@@ -37,21 +37,34 @@ describe('LoginComponent placeholders', () => {
     const fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
-    const placeholder = (id: string) => element.querySelector<HTMLInputElement>(`#${id}`)!.placeholder;
-    return { email: placeholder('email'), password: placeholder('password'), hint: element.querySelector('#login-demo-hint') };
+    const input = (id: string) => element.querySelector<HTMLInputElement>(`#${id}`)!;
+    return {
+      form: fixture.componentInstance.form,
+      email: input('email'),
+      password: input('password'),
+      hint: element.querySelector('#login-demo-hint'),
+    };
   };
 
-  it('shows the demo account injected at build time, with its hint', () => {
+  it('fills the fields with the demo account injected at build time, ready to submit', () => {
     const view = render({ email: 'demo@example.org', password: 'Example123*' });
-    expect(view.email).toBe('demo@example.org');
-    expect(view.password).toBe('Example123*');
+    expect(view.email.value).toBe('demo@example.org');
+    expect(view.password.value).toBe('Example123*');
+    expect(view.form.valid).toBeTrue();
     expect(view.hint).not.toBeNull();
   });
 
-  it('falls back to the generic translated placeholders without a demo account', () => {
+  it('keeps the generic placeholders, so a cleared field still guides the user', () => {
+    const view = render({ email: 'demo@example.org', password: 'Example123*' });
+    expect(view.email.placeholder).toBe('t:auth.login.emailPlaceholder');
+    expect(view.password.placeholder).toBe('t:auth.passwordPlaceholder');
+  });
+
+  it('leaves the fields empty and without hint when the build has no demo account', () => {
     const view = render({ email: '', password: '' });
-    expect(view.email).toBe('t:auth.login.emailPlaceholder');
-    expect(view.password).toBe('t:auth.passwordPlaceholder');
+    expect(view.email.value).toBe('');
+    expect(view.password.value).toBe('');
+    expect(view.form.valid).toBeFalse();
     expect(view.hint).toBeNull();
   });
 });
