@@ -34,15 +34,15 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly aiEngine = inject(AiEngineStatusService);
 
-  /** Solo para los placeholders: el formulario y la validación no cambian. */
+  /** La cuenta de ejemplo viene escrita en los campos; sin cuenta en el build quedan vacíos. */
   readonly demoAccount = environment.demoAccount;
   readonly showPassword = signal(false);
   readonly submitError = signal<LoginError | null>(null);
   readonly submitting = signal(false);
 
   readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    email: [this.demoAccount.email, [Validators.required, Validators.email]],
+    password: [this.demoAccount.password, [Validators.required, Validators.minLength(8)]],
     remember: [true],
   });
 

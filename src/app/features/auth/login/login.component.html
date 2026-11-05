@@ -28,7 +28,7 @@
         }
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-5">
-          <!-- Cuenta de ejemplo para la revisión: solo se muestra, nunca se autollena. Sin cuenta inyectada en el build, no hay pista. -->
+          <!-- Cuenta de ejemplo para la revisión: ya viene escrita en los campos. Sin cuenta inyectada en el build, no hay pista. -->
           @if (demoAccount.email) {
             <p id="login-demo-hint" class="login-demo-hint">
               <span class="material-symbols-outlined shrink-0 text-xl" aria-hidden="true">badge</span>
@@ -43,8 +43,7 @@
               autocomplete="email"
               formControlName="email"
               class="field-input"
-              [class.field-input--demo]="demoAccount.email"
-              [placeholder]="demoAccount.email || ('auth.login.emailPlaceholder' | translate)"
+              [placeholder]="'auth.login.emailPlaceholder' | translate"
               [attr.aria-describedby]="demoAccount.email ? 'login-demo-hint' : null"
               [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
             />
@@ -59,8 +58,7 @@
                 autocomplete="current-password"
                 formControlName="password"
                 class="field-input pe-14"
-                [class.field-input--demo]="demoAccount.password"
-                [placeholder]="demoAccount.password || ('auth.passwordPlaceholder' | translate)"
+                [placeholder]="'auth.passwordPlaceholder' | translate"
                 [attr.aria-describedby]="demoAccount.password ? 'login-demo-hint' : null"
                 [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched"
               />

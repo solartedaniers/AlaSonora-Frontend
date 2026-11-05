@@ -176,7 +176,7 @@
       "errorEmailNotConfirmedTitle": "Confirm your email address",
       "errorEmailNotConfirmedBody": "Almost there. Check your inbox and confirm your email before signing in.",
       "demoTitle": "Demo account.",
-      "demoHint": "For review, sign in with the email and password shown as examples in the fields."
+      "demoHint": "The fields already contain the demo account for review: just press Log In. To use another account, clear them and type yours."
     },
     "forgotPassword": {
       "title": "Recover your field access",
