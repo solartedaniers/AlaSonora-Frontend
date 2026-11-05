@@ -6,6 +6,8 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import notAppPaths from './server/not-app-paths.json';
+import { NotAppPathFilter } from './server/not-app-path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -90,6 +92,11 @@ app.use(
     },
   }),
 );
+
+// Lo que no existe en los estáticos y no es ruta de la app (robots buscando .env, wp-admin…) recibe un 404 corto,
+// sin pasar por Angular ni llamar al backend.
+const notAppPath = new NotAppPathFilter(notAppPaths);
+app.use((req, res, next) => (notAppPath.matches(req.path) ? res.sendStatus(404) : next()));
 
 // El resto de rutas: SSG sirve el HTML prerenderizado y CSR el index.csr.html,
 // según el renderMode de app.routes.server.ts.

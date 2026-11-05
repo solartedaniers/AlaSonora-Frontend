@@ -1,0 +1,27 @@
+{
+  "allowedDotSegments": [".well-known"],
+  "scannerSegments": [
+    "wp-admin",
+    "wp-content",
+    "wp-includes",
+    "wp-json",
+    "wordpress",
+    "cgi-bin",
+    "phpmyadmin",
+    "pma",
+    "actuator",
+    "vendor",
+    "node_modules",
+    "xmlrpc",
+    "owa",
+    "ecp",
+    "autodiscover",
+    "solr",
+    "boaform",
+    "hnap1",
+    "telescope",
+    "debug",
+    "console",
+    "server-status"
+  ]
+}
