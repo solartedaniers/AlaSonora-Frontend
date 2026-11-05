@@ -74,6 +74,11 @@ flowchart LR
     storage["Storage"]
     realtime["Realtime"]
   end
+  subgraph external["Fuentes externas"]
+    wikidata["Wikidata"]
+    commons["Wikimedia Commons"]
+    xenocanto["Xeno-canto"]
+  end
   user -->|páginas SSR y la app| fe
   user -->|API REST con JWT| be
   user -->|"GET /health para despertarlo"| ia
@@ -84,8 +89,85 @@ flowchart LR
   be --> db
   be -->|valido el JWT con JWKS| auth
   be -->|URLs firmadas y borrado| storage
+  fe -->|"SSR de /map: feed público"| be
+  db -->|"trigger: detección pública nueva"| realtime
+  be -->|"nombre en español, foto y cantos de referencia"| external
   classDef current fill:#0f766e,stroke:#134e4a,stroke-width:3px,color:#ffffff
   class fe current
+```
+
+### Arquitectura interna
+
+Cómo se reparte el trabajo dentro del frontend: el servidor Express decide el rendering por ruta, los
+componentes usan los servicios de `core/services` y el trabajo pesado o de fondo vive en los workers.
+
+```mermaid
+flowchart TB
+  subgraph server["Servidor Express (src/server.ts)"]
+    statics["Estáticos con hash<br/>caché de 1 año"]
+    isr["Caché ISR en memoria<br/>60 s, stale-while-revalidate"]
+    engine["AngularNodeAppEngine"]
+  end
+  subgraph routing["Rutas y rendering (app.routes.server.ts)"]
+    ssg["SSG<br/>/, /login, /register, /forgot-password"]
+    ssr["SSR con ISR<br/>/map"]
+    csr["CSR con authGuard y adminGuard<br/>/dashboard, /record, /result/:id,<br/>/history, /profile, /admin, /reset-password"]
+    hydration["Hidratación incremental<br/>@defer hydrate on viewport y never,<br/>withEventReplay"]
+  end
+  subgraph ui["Componentes"]
+    features["features/<br/>landing, auth, dashboard, recording,<br/>result, history, map, profile, admin"]
+    shared["shared/components<br/>nav-header, espectrogramas,<br/>update-prompt, offline-banner"]
+  end
+  subgraph services["Servicios principales (core/services)"]
+    usersvc["UserService y ProfileService"]
+    detsvc["DetectionsService y ClassificationService"]
+    aisvc["AiEngineStatusService"]
+    notifsvc["NotificationsService"]
+    audiosvc["AudioCaptureService y<br/>RecordingSpectrogramService"]
+    offlinesvc["PendingRecordingsSyncService y<br/>OfflineStorageService"]
+    livesvc["LiveSyncService"]
+    updatesvc["AppUpdateService"]
+    interceptor["authInterceptor<br/>agrega el JWT"]
+  end
+  subgraph workers["Workers"]
+    webworker["Web Worker<br/>audio-processing.worker.ts<br/>FFT radix-2"]
+    sharedworker["Shared Worker<br/>sync.worker.ts<br/>pestañas abiertas y detecciones en vivo"]
+    serviceworker["Service Worker<br/>sw.js = ngsw-worker.js<br/>+ Background Sync"]
+  end
+  idb[("IndexedDB<br/>cola offline")]
+  backend["Backend /api"]
+  aiengine["Motor de IA /health"]
+  subgraph supa["Supabase"]
+    supaauth["Auth"]
+    supastorage["Storage"]
+    suparealtime["Realtime"]
+  end
+
+  statics --> ssg
+  isr --> ssr
+  engine --> ssg
+  engine --> ssr
+  engine --> csr
+  ssg --> hydration
+  ssr --> hydration
+  routing --> features
+  features --> shared
+  features --> services
+  audiosvc -->|"trozos de audio"| webworker
+  livesvc <-->|"mensajes entre pestañas"| sharedworker
+  offlinesvc --> idb
+  serviceworker -->|"sync: pide vaciar la cola"| offlinesvc
+  updatesvc -->|"versión nueva"| serviceworker
+  usersvc --> supaauth
+  detsvc -->|"sube el WAV"| supastorage
+  notifsvc --> suparealtime
+  detsvc --> interceptor
+  usersvc --> interceptor
+  notifsvc --> interceptor
+  aisvc --> interceptor
+  interceptor -->|"REST con JWT"| backend
+  aisvc -->|"GET /health para despertarlo"| aiengine
+  ssr -->|"feed público"| backend
 ```
 
 ## Identificación por foto: mejora futura
