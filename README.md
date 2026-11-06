@@ -406,8 +406,8 @@ El motor duerme en Render tras 15 minutos sin uso, y no uso keep-alive.
 | Variables | `SITE_URL=https://alasonora.com` y, opcionales, `DEMO_ACCOUNT_EMAIL` y `DEMO_ACCOUNT_PASSWORD` |
 
 El frontend no tiene un endpoint de salud dedicado. Si configuras un Health Check Path, `/` sirve: es
-una página prerenderizada que responde 200 sin depender del backend. El dominio propio es
-https://alasonora.com, y la app también responde en https://alasonora-frontend.onrender.com.
+una página prerenderizada que responde 200 sin depender del backend. La dirección pública es
+https://alasonora.com, y www.alasonora.com redirige ahí.
 
 ## Estructura
 
